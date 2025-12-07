@@ -1,0 +1,18 @@
+services:
+  # Java 後端服務
+  health-log-java:
+    # 待設定映像檔
+    # image: your-registry/health-log-java:latest 
+    volumes: [] 
+    # **可選：增加部署設定，例如複本數**
+    # deploy:
+    #   replicas: 3
+    
+  # Vue.js 前端服務
+  health-log-vue:
+    # 待設定映像檔
+    # image: your-registry/health-log-vue-nginx:latest 
+    volumes: []
+    environment:
+      # 在生產環境中，讓 Nginx 代理時使用容器內部的服務名稱
+      - VITE_API_BASE_URL=http://health-log-java:8080
