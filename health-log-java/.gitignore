@@ -31,3 +31,7 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Local Configuration Files ###
+**/application-local.properties
+*.local.properties
