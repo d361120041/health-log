@@ -109,5 +109,70 @@ class UserRepositoryTest {
         assertThat(foundInactive).isPresent();
         assertThat(foundInactive.get().getIsActive()).isFalse();
     }
+
+    @Test
+    void testFindByEmailVerificationToken() {
+        // Given: 建立帶有 email 驗證 token 的使用者
+        User user = new User();
+        user.setEmail("verify@example.com");
+        user.setPasswordHash("hashed_password");
+        user.setRole(userRole);
+        user.setEmailVerificationToken("verification-token-123");
+        entityManager.persistAndFlush(user);
+
+        // When: 根據 token 查詢使用者
+        Optional<User> found = userRepository.findByEmailVerificationToken("verification-token-123");
+        Optional<User> notFound = userRepository.findByEmailVerificationToken("non-existent-token");
+
+        // Then: 應該正確找到對應的使用者
+        assertThat(found).isPresent();
+        assertThat(found.get().getEmail()).isEqualTo("verify@example.com");
+        assertThat(found.get().getEmailVerificationToken()).isEqualTo("verification-token-123");
+        assertThat(notFound).isEmpty();
+    }
+
+    @Test
+    void testFindByOauth2ProviderAndOauth2Id() {
+        // Given: 建立 OAuth2 使用者
+        User oauth2User = new User();
+        oauth2User.setEmail("oauth2@example.com");
+        oauth2User.setPasswordHash(null); // OAuth2 使用者沒有密碼
+        oauth2User.setRole(userRole);
+        oauth2User.setOauth2Provider("GOOGLE");
+        oauth2User.setOauth2Id("google-oauth2-id-123");
+        entityManager.persistAndFlush(oauth2User);
+
+        // When: 根據 OAuth2 提供者和 ID 查詢使用者
+        Optional<User> found = userRepository.findByOauth2ProviderAndOauth2Id("GOOGLE", "google-oauth2-id-123");
+        Optional<User> notFound = userRepository.findByOauth2ProviderAndOauth2Id("GOOGLE", "non-existent-id");
+        Optional<User> notFoundProvider = userRepository.findByOauth2ProviderAndOauth2Id("FACEBOOK", "google-oauth2-id-123");
+
+        // Then: 應該正確找到對應的使用者
+        assertThat(found).isPresent();
+        assertThat(found.get().getEmail()).isEqualTo("oauth2@example.com");
+        assertThat(found.get().getOauth2Provider()).isEqualTo("GOOGLE");
+        assertThat(found.get().getOauth2Id()).isEqualTo("google-oauth2-id-123");
+        assertThat(found.get().getPasswordHash()).isNull();
+        assertThat(notFound).isEmpty();
+        assertThat(notFoundProvider).isEmpty();
+    }
+
+    @Test
+    void testUserWithNullPasswordHash() {
+        // Given: 建立沒有密碼的使用者（OAuth2 使用者）
+        User userWithoutPassword = new User();
+        userWithoutPassword.setEmail("oauth@example.com");
+        userWithoutPassword.setPasswordHash(null); // password_hash 可以為 null
+        userWithoutPassword.setRole(userRole);
+        entityManager.persistAndFlush(userWithoutPassword);
+
+        // When: 查詢使用者
+        Optional<User> found = userRepository.findByEmail("oauth@example.com");
+
+        // Then: 應該找到使用者，且 password_hash 為 null
+        assertThat(found).isPresent();
+        assertThat(found.get().getEmail()).isEqualTo("oauth@example.com");
+        assertThat(found.get().getPasswordHash()).isNull();
+    }
 }
 

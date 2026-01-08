@@ -2,7 +2,8 @@ import axios from 'axios'
 import { useAuthStore } from '@/stores/authStore'
 import router from '@/router'
 
-// API 基礎 URL（可從環境變數讀取，開發環境預設為 localhost:8080）
+// API 基礎 URL（從環境變數讀取，開發環境使用 .env.development 設定）
+// 預設值為 localhost:8080（當環境變數未設定時使用）
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
 
 // 創建 Axios 實例

@@ -1,9 +1,10 @@
 <template>
-  <div class="login-container">
-    <div class="login-card">
-      <h1 class="login-title">每日身體狀況記錄</h1>
-      <form @submit.prevent="handleLogin" class="login-form">
+  <div class="register-container">
+    <div class="register-card">
+      <h1 class="register-title">註冊帳號</h1>
+      <form @submit.prevent="handleRegister" class="register-form">
         <div v-if="error" class="error-message">{{ error }}</div>
+        <div v-if="success" class="success-message">{{ success }}</div>
         
         <div class="form-group">
           <label for="email">電子郵件</label>
@@ -25,9 +26,24 @@
             v-model="password"
             type="password"
             required
-            placeholder="請輸入密碼"
+            placeholder="請輸入密碼（至少 8 個字元）"
             class="form-input"
             :disabled="isLoading"
+            minlength="8"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="confirmPassword">確認密碼</label>
+          <input
+            id="confirmPassword"
+            v-model="confirmPassword"
+            type="password"
+            required
+            placeholder="請再次輸入密碼"
+            class="form-input"
+            :disabled="isLoading"
+            minlength="8"
           />
         </div>
 
@@ -36,11 +52,11 @@
           class="btn btn-primary"
           :disabled="isLoading"
         >
-          {{ isLoading ? '登入中...' : '登入' }}
+          {{ isLoading ? '註冊中...' : '註冊' }}
         </button>
 
-        <div class="register-link">
-          <p>還沒有帳號？<router-link to="/register">立即註冊</router-link></p>
+        <div class="login-link">
+          <p>已經有帳號？<router-link to="/login">前往登入</router-link></p>
         </div>
       </form>
     </div>
@@ -49,32 +65,58 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 
 const router = useRouter()
-const route = useRoute()
 const authStore = useAuthStore()
 
 const email = ref('')
 const password = ref('')
+const confirmPassword = ref('')
 const isLoading = ref(false)
 const error = ref('')
+const success = ref('')
 
-const handleLogin = async () => {
+const handleRegister = async () => {
   error.value = ''
+  success.value = ''
+
+  // 前端驗證：確認密碼是否一致
+  if (password.value !== confirmPassword.value) {
+    error.value = '密碼與確認密碼不一致'
+    return
+  }
+
+  // 前端驗證：密碼長度
+  if (password.value.length < 8) {
+    error.value = '密碼長度至少需要 8 個字元'
+    return
+  }
+
   isLoading.value = true
 
   try {
-    await authStore.login(email.value, password.value)
-    // 登入成功，重定向到原始路徑或記錄列表
-    const redirect = route.query.redirect || '/records'
-    router.push(redirect)
+    await authStore.register({
+      email: email.value,
+      password: password.value,
+      confirmPassword: confirmPassword.value,
+    })
+    
+    // 註冊成功，顯示成功訊息
+    success.value = '註冊成功！請檢查您的電子郵件以驗證帳號。'
+    
+    // 3 秒後重定向到登入頁
+    setTimeout(() => {
+      router.push('/login')
+    }, 3000)
   } catch (err) {
-    error.value = err.response?.status === 401
-      ? '電子郵件或密碼錯誤'
-      : '登入失敗，請稍後再試'
-    console.error('Login error:', err)
+    if (err.response?.status === 400) {
+      error.value = err.response.data || '此電子郵件已被註冊或註冊資料格式錯誤'
+    } else {
+      error.value = '註冊失敗，請稍後再試'
+    }
+    console.error('Register error:', err)
   } finally {
     isLoading.value = false
   }
@@ -89,7 +131,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.login-container {
+.register-container {
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -98,7 +140,7 @@ onMounted(() => {
   padding: 1rem;
 }
 
-.login-card {
+.register-card {
   background: white;
   border-radius: 8px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
@@ -107,14 +149,14 @@ onMounted(() => {
   max-width: 400px;
 }
 
-.login-title {
+.register-title {
   text-align: center;
   margin-bottom: 2rem;
   color: #333;
   font-size: 1.75rem;
 }
 
-.login-form {
+.register-form {
   width: 100%;
 }
 
@@ -136,6 +178,7 @@ onMounted(() => {
   border-radius: 4px;
   font-size: 1rem;
   transition: border-color 0.2s;
+  box-sizing: border-box;
 }
 
 .form-input:focus {
@@ -155,6 +198,15 @@ onMounted(() => {
   border-radius: 4px;
   margin-bottom: 1rem;
   border: 1px solid #e74c3c;
+}
+
+.success-message {
+  background-color: #d4edda;
+  color: #155724;
+  padding: 0.75rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  border: 1px solid #c3e6cb;
 }
 
 .btn {
@@ -182,19 +234,19 @@ onMounted(() => {
   cursor: not-allowed;
 }
 
-.register-link {
+.login-link {
   margin-top: 1.5rem;
   text-align: center;
   color: #666;
 }
 
-.register-link a {
+.login-link a {
   color: #667eea;
   text-decoration: none;
   font-weight: 500;
 }
 
-.register-link a:hover {
+.login-link a:hover {
   text-decoration: underline;
 }
 </style>

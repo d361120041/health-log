@@ -16,6 +16,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import tw.danielchiang.health_log.model.dto.AuthResponseDTO;
 import tw.danielchiang.health_log.model.dto.LoginRequestDTO;
+import tw.danielchiang.health_log.model.dto.RegisterRequestDTO;
+import tw.danielchiang.health_log.model.dto.VerifyEmailRequestDTO;
 import tw.danielchiang.health_log.service.AuthService;
 
 /**
@@ -122,6 +124,44 @@ public class AuthController {
         response.addCookie(refreshTokenCookie);
 
         return ResponseEntity.ok().build();
+    }
+
+    /**
+     * 使用者註冊
+     * @param registerRequest 註冊請求
+     * @return 成功響應
+     */
+    @PostMapping("/register")
+    public ResponseEntity<Void> register(@Valid @RequestBody RegisterRequestDTO registerRequest) {
+        try {
+            authService.register(registerRequest);
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            log.warn("Registration failed: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        } catch (Exception e) {
+            log.error("Registration error: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * 驗證 Email
+     * @param verifyEmailRequest Email 驗證請求
+     * @return 成功響應
+     */
+    @PostMapping("/verify-email")
+    public ResponseEntity<Void> verifyEmail(@Valid @RequestBody VerifyEmailRequestDTO verifyEmailRequest) {
+        try {
+            authService.verifyEmail(verifyEmailRequest);
+            return ResponseEntity.ok().build();
+        } catch (BadCredentialsException e) {
+            log.warn("Email verification failed: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        } catch (Exception e) {
+            log.error("Email verification error: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 }
 

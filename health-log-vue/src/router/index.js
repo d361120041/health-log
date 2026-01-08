@@ -17,6 +17,22 @@ const router = createRouter({
       },
     },
     {
+      path: '/register',
+      name: 'Register',
+      component: () => import('@/views/Auth/Register.vue'),
+      meta: {
+        requiresAuth: false, // 註冊頁面不需要認證
+      },
+    },
+    {
+      path: '/verify-email',
+      name: 'VerifyEmail',
+      component: () => import('@/views/Auth/VerifyEmail.vue'),
+      meta: {
+        requiresAuth: false, // 驗證頁面不需要認證
+      },
+    },
+    {
       path: '/records',
       name: 'RecordList',
       component: () => import('@/views/Records/RecordList.vue'),
@@ -95,8 +111,8 @@ router.beforeEach((to, from, next) => {
     }
   }
 
-  // 如果已登入且訪問登入頁，重定向到記錄列表
-  if (to.name === 'Login' && authStore.isAuthenticated) {
+  // 如果已登入且訪問登入/註冊/驗證頁，重定向到記錄列表
+  if ((to.name === 'Login' || to.name === 'Register' || to.name === 'VerifyEmail') && authStore.isAuthenticated) {
     // 檢查是否有重定向路徑
     const redirect = from.query.redirect || '/records'
     next(redirect)

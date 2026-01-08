@@ -26,7 +26,9 @@ import lombok.NoArgsConstructor;
  */
 @Entity
 @Table(name = "users", indexes = {
-    @Index(name = "idx_users_email", columnList = "email", unique = true)
+    @Index(name = "idx_users_email", columnList = "email", unique = true),
+    @Index(name = "idx_users_oauth2", columnList = "oauth2_provider,oauth2_id"),
+    @Index(name = "idx_users_email_verification_token", columnList = "email_verification_token")
 })
 @Data
 @NoArgsConstructor
@@ -41,7 +43,7 @@ public class User {
     @Column(name = "email", nullable = false, unique = true, length = 255)
     private String email;
 
-    @Column(name = "password_hash", nullable = false, length = 255)
+    @Column(name = "password_hash", nullable = true, length = 255)
     private String passwordHash;
 
     @ManyToOne(fetch = FetchType.EAGER)
@@ -53,6 +55,18 @@ public class User {
 
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
+
+    @Column(name = "oauth2_provider", nullable = true, length = 50)
+    private String oauth2Provider;
+
+    @Column(name = "oauth2_id", nullable = true, length = 255)
+    private String oauth2Id;
+
+    @Column(name = "email_verification_token", nullable = true, length = 255)
+    private String emailVerificationToken;
+
+    @Column(name = "email_verified_at", nullable = true)
+    private OffsetDateTime emailVerifiedAt;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<DailyRecord> dailyRecords;

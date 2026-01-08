@@ -67,6 +67,36 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   /**
+   * 使用者註冊
+   * @param {Object} registerData 註冊資料 { email, password, confirmPassword }
+   * @returns {Promise<void>}
+   */
+  const register = async (registerData) => {
+    try {
+      const response = await apiClient.post('/auth/register', registerData)
+      return response.data
+    } catch (error) {
+      console.error('Registration failed:', error)
+      throw error
+    }
+  }
+
+  /**
+   * 驗證電子郵件
+   * @param {string} token 驗證 Token
+   * @returns {Promise<void>}
+   */
+  const verifyEmail = async (token) => {
+    try {
+      const response = await apiClient.post('/auth/verify-email', { token })
+      return response.data
+    } catch (error) {
+      console.error('Email verification failed:', error)
+      throw error
+    }
+  }
+
+  /**
    * 使用者登入
    * @param {string} email 電子郵件
    * @param {string} password 密碼
@@ -145,6 +175,8 @@ export const useAuthStore = defineStore('auth', () => {
     // Computed
     isAuthenticated,
     // Actions
+    register,
+    verifyEmail,
     login,
     logout,
     refreshAccessToken,
