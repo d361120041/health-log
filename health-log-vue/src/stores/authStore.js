@@ -157,15 +157,18 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   /**
-   * 初始化：從 localStorage 恢復 Token（可選）
+   * 初始化認證狀態
    * 注意：Refresh Token 存在 Cookie 中，不需要手動恢復
    */
-  const init = () => {
-    // 可以從 localStorage 恢復 accessToken（如果需要的話）
-    // const savedToken = localStorage.getItem('accessToken')
-    // if (savedToken) {
-    //   setAccessToken(savedToken)
-    // }
+  const init = async () => {
+      // 頁面載入時總是從後端獲取新的 token
+      // 這樣可以確保 token 是最新的，並驗證 session 是否有效
+    try {
+      await refreshAccessToken()
+    } catch (error) {
+      accessToken.value = null
+      user.value = null
+    }
   }
 
   return {

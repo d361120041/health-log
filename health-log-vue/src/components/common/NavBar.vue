@@ -216,16 +216,17 @@ const handleLogout = async () => {
     height: 56px;
   }
 
-  .brand-text,
-  .nav-text,
-  .logout-text {
-    display: none;
-  }
-
+  /* 手機版：隱藏圖示，顯示文字 */
   .brand-icon,
   .nav-icon,
   .logout-icon {
-    margin-right: 0;
+    display: none;
+  }
+
+  .brand-text,
+  .nav-text,
+  .logout-text {
+    display: inline;
   }
 
   .nav-link {
