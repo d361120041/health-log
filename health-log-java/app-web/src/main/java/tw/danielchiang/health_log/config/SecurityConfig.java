@@ -1,8 +1,5 @@
 package tw.danielchiang.health_log.config;
 
-import java.util.Arrays;
-import java.util.List;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -13,9 +10,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import lombok.RequiredArgsConstructor;
 import tw.danielchiang.health_log.service.AuthService;
@@ -39,8 +33,8 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            // 配置 CORS
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            // 移除 CORS 配置（因為使用反向代理，不需要 CORS）
+            // .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             // 禁用 CSRF（使用 JWT，不需要 CSRF 保護）
             .csrf(csrf -> csrf.disable())
             // 配置授權規則
@@ -68,39 +62,42 @@ public class SecurityConfig {
 
     /**
      * CORS 配置
-     * 允許前端跨域請求（支援 withCredentials）
+     * 注意：開發環境使用 Vite 代理時，理論上不需要 CORS
+     * 但保留此配置以支援：
+     * 1. 直接測試後端 API（如 Postman 測試）
+     * 2. 生產環境可能需要跨域支援
+     * 3. 開發環境的靈活性
      */
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
+    // @Bean
+    // public CorsConfigurationSource corsConfigurationSource() {
+    //     CorsConfiguration configuration = new CorsConfiguration();
         
-        // 允許的前端來源（開發環境：支援多種訪問方式）
-        configuration.setAllowedOrigins(List.of(
-            "http://localhost:5173",
-            "http://127.0.0.1:5173",
-            "http://192.168.50.140:5173"  // 前端後端同機運行時的本機 IP
-        ));
+    //     // 允許的前端來源（開發環境：支援多種訪問方式）
+    //     configuration.setAllowedOrigins(List.of(
+    //         "http://localhost:5173",
+    //         "http://127.0.0.1:5173"
+    //     ));
         
-        // 允許的 HTTP 方法
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+    //     // 允許的 HTTP 方法
+    //     configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         
-        // 允許的請求頭
-        configuration.setAllowedHeaders(Arrays.asList("*"));
+    //     // 允許的請求頭
+    //     configuration.setAllowedHeaders(Arrays.asList("*"));
         
-        // 允許發送 Cookie（必須設定，因為前端使用 withCredentials: true）
-        configuration.setAllowCredentials(true);
+    //     // 允許發送 Cookie（必須設定，因為前端使用 withCredentials: true）
+    //     configuration.setAllowCredentials(true);
         
-        // 暴露的響應頭（前端可以訪問的響應頭）
-        configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
+    //     // 暴露的響應頭（前端可以訪問的響應頭）
+    //     configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
         
-        // 預檢請求（OPTIONS）的緩存時間（秒）
-        configuration.setMaxAge(3600L);
+    //     // 預檢請求（OPTIONS）的緩存時間（秒）
+    //     configuration.setMaxAge(3600L);
         
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/api/**", configuration);
+    //     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    //     source.registerCorsConfiguration("/api/**", configuration);
         
-        return source;
-    }
+    //     return source;
+    // }
 
     /**
      * 認證管理器 Bean
