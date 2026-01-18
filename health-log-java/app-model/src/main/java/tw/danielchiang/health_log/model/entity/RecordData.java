@@ -1,5 +1,7 @@
 package tw.danielchiang.health_log.model.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -39,10 +41,12 @@ public class RecordData {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "record_id", nullable = false)
+    @JsonBackReference("dailyRecord")
     private DailyRecord dailyRecord;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "setting_id", nullable = false)
+    @JsonBackReference("fieldSetting")
     private FieldSetting fieldSetting;
 
     @Column(name = "value_text", nullable = false, columnDefinition = "TEXT")
