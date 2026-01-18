@@ -35,3 +35,6 @@ build/
 ### Local Configuration Files ###
 **/application-local.properties
 *.local.properties
+
+### Log Files ###
+logs/
