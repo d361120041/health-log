@@ -71,6 +71,7 @@ public class DailyRecordService {
             // 刪除現有的 RecordData（如果存在）
             List<RecordData> existingData = recordDataRepository.findByDailyRecordRecordId(dailyRecord.getRecordId());
             recordDataRepository.deleteAll(existingData);
+            recordDataRepository.flush();
 
             // 創建新的 RecordData
             for (Map.Entry<String, String> entry : request.getFieldValues().entrySet()) {

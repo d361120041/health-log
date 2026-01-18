@@ -15,10 +15,22 @@ import tw.danielchiang.health_log.model.entity.FieldSetting;
 public interface FieldSettingRepository extends JpaRepository<FieldSetting, Integer> {
 
     /**
+     * 查詢所有欄位設定，按 setting_id 升序排序
+     * @return 所有欄位設定列表
+     */
+    List<FieldSetting> findAllByOrderBySettingIdAsc();
+
+    /**
      * 查詢所有啟用的欄位設定
      * @return 啟用的欄位設定列表
      */
     List<FieldSetting> findByIsActiveTrue();
+
+    /**
+     * 查詢所有啟用的欄位設定，按 setting_id 升序排序
+     * @return 啟用的欄位設定列表
+     */
+    List<FieldSetting> findByIsActiveTrueOrderBySettingIdAsc();
 
     /**
      * 根據欄位名稱查詢

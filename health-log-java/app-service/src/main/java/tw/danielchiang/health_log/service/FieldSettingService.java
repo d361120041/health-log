@@ -24,21 +24,21 @@ public class FieldSettingService {
     private final FieldSettingRepository fieldSettingRepository;
 
     /**
-     * 查詢所有啟用的欄位設定
+     * 查詢所有啟用的欄位設定，按 setting_id 升序排序
      * @return 啟用的欄位設定列表
      */
     @Transactional(readOnly = true)
     public List<FieldSetting> getAllActiveFieldSettings() {
-        return fieldSettingRepository.findByIsActiveTrue();
+        return fieldSettingRepository.findByIsActiveTrueOrderBySettingIdAsc();
     }
 
     /**
-     * 查詢所有欄位設定（包含未啟用的）
+     * 查詢所有欄位設定（包含未啟用的），按 setting_id 升序排序
      * @return 所有欄位設定列表
      */
     @Transactional(readOnly = true)
     public List<FieldSetting> getAllFieldSettings() {
-        return fieldSettingRepository.findAll();
+        return fieldSettingRepository.findAllByOrderBySettingIdAsc();
     }
 
     /**
