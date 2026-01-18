@@ -1,7 +1,11 @@
 package tw.danielchiang.health_log.config;
 
+import java.util.Map;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -10,6 +14,8 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.RequiredArgsConstructor;
 import tw.danielchiang.health_log.service.AuthService;
@@ -40,13 +46,30 @@ public class SecurityConfig {
             // 配置授權規則
             .authorizeHttpRequests(auth -> auth
                 // 公開端點
-                .requestMatchers("/api/auth/login", "/api/auth/refresh", "/api/auth/logout", 
-                                 "/api/auth/register", "/api/auth/verify-email").permitAll()
+                .requestMatchers(
+                    "/api/auth/login", "/api/auth/refresh", "/api/auth/logout", "/api/auth/register", 
+                    "/api/auth/verify-email").permitAll()
                 .requestMatchers("/api/settings/fields").permitAll() // 公開端點，用於動態表單渲染
                 // Admin 專用端點
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 // 其他端點需要認證
                 .anyRequest().authenticated()
+            )
+            .exceptionHandling(exception -> exception
+                // 未認證時返回 401 Unauthorized
+                .authenticationEntryPoint((request, response, authException) -> {
+                    response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                    response.setContentType(MediaType.APPLICATION_JSON_VALUE); 
+                    response.getWriter().write(new ObjectMapper().writeValueAsString(
+                        Map.of("message", authException.getMessage())));
+                })
+                // 未授權時返回 403 Forbidden
+                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                    response.setStatus(HttpStatus.FORBIDDEN.value());
+                    response.setContentType(MediaType.APPLICATION_JSON_VALUE); 
+                    response.getWriter().write(new ObjectMapper().writeValueAsString(
+                        Map.of("message", accessDeniedException.getMessage())));
+                })
             )
             // 配置用戶詳情服務
             .userDetailsService(authService)
