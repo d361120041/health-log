@@ -94,7 +94,7 @@ public class DailyRecordService {
                 recordData.setDailyRecord(dailyRecord);
                 recordData.setFieldSetting(fieldSetting);
                 recordData.setValueText(value != null ? value : "");
-                recordDataRepository.saveAndFlush(recordData);
+                recordDataRepository.save(recordData);
             }
         }
 

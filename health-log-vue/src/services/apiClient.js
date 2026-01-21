@@ -9,7 +9,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080
 // 創建 Axios 實例
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 60000,
+  timeout: 10000,
   withCredentials: true, // 啟用 Cookie 支援（用於 Refresh Token）
   headers: {
     'Content-Type': 'application/json',
