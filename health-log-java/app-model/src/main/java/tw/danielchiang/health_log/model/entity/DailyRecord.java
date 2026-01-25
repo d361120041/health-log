@@ -2,6 +2,7 @@ package tw.danielchiang.health_log.model.entity;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
@@ -54,7 +55,7 @@ public class DailyRecord {
 
     @OneToMany(mappedBy = "dailyRecord", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonManagedReference("dailyRecord")
-    private List<RecordData> recordDataList;
+    private List<RecordData> recordDataList = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {

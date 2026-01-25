@@ -18,8 +18,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import tw.danielchiang.health_log.model.dto.DailyRecordDetailDTO;
-import tw.danielchiang.health_log.model.dto.RecordRequestDTO;
+import tw.danielchiang.health_log.model.dto.reponse.DailyRecordDetailDTO;
+import tw.danielchiang.health_log.model.dto.reponse.ResponseDTO;
+import tw.danielchiang.health_log.model.dto.request.RecordRequestDTO;
+import tw.danielchiang.health_log.model.dto.request.SearchRequestDTO;
+import tw.danielchiang.health_log.model.entity.DailyRecord;
 import tw.danielchiang.health_log.service.DailyRecordService;
 import tw.danielchiang.health_log.web.util.SecurityUtil;
 
@@ -40,6 +43,7 @@ public class DailyRecordController {
      * 獲取當前用戶的所有記錄
      * GET /api/records
      */
+    @Deprecated
     @GetMapping
     public ResponseEntity<List<DailyRecordDetailDTO>> getAllRecords(HttpServletRequest request) {
         try {
@@ -49,6 +53,24 @@ public class DailyRecordController {
         } catch (IllegalStateException e) {
             log.warn("Failed to get records: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+    }
+
+    @PostMapping("/search")
+    public ResponseEntity<ResponseDTO> getRecordsByUserId(
+            @Valid @RequestBody SearchRequestDTO<DailyRecord> request,
+            HttpServletRequest httpRequest) {
+        ResponseDTO responseDTO = new ResponseDTO();
+        try {
+            Long userId = securityUtil.getCurrentUserId(httpRequest);
+            List<DailyRecordDetailDTO> records = dailyRecordService.getRecordsByUserId(userId, request);
+            responseDTO.setData(records);
+            return ResponseEntity.ok().body(responseDTO);
+        } catch (IllegalStateException e) {
+            log.warn("Failed to get records: {}", e.getMessage());
+            responseDTO.setStatus(HttpStatus.UNAUTHORIZED.value());
+            responseDTO.setMessage(HttpStatus.UNAUTHORIZED.name());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(responseDTO);
         }
     }
 
@@ -113,4 +135,3 @@ public class DailyRecordController {
         }
     }
 }
-

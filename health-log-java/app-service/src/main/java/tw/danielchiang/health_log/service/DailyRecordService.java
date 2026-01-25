@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,12 +17,15 @@ import tw.danielchiang.health_log.data.repository.DailyRecordRepository;
 import tw.danielchiang.health_log.data.repository.FieldSettingRepository;
 import tw.danielchiang.health_log.data.repository.RecordDataRepository;
 import tw.danielchiang.health_log.data.repository.UserRepository;
-import tw.danielchiang.health_log.model.dto.DailyRecordDetailDTO;
-import tw.danielchiang.health_log.model.dto.RecordRequestDTO;
+import tw.danielchiang.health_log.model.dto.reponse.DailyRecordDetailDTO;
+import tw.danielchiang.health_log.model.dto.request.RecordRequestDTO;
+import tw.danielchiang.health_log.model.dto.request.SearchRequestDTO;
 import tw.danielchiang.health_log.model.entity.DailyRecord;
 import tw.danielchiang.health_log.model.entity.FieldSetting;
 import tw.danielchiang.health_log.model.entity.RecordData;
 import tw.danielchiang.health_log.model.entity.User;
+import tw.danielchiang.health_log.model.obj.SearchObj;
+import tw.danielchiang.health_log.model.obj.WhereObj;
 
 /**
  * 每日記錄服務
@@ -95,6 +99,7 @@ public class DailyRecordService {
                 recordData.setFieldSetting(fieldSetting);
                 recordData.setValueText(value != null ? value : "");
                 recordDataRepository.save(recordData);
+                dailyRecord.getRecordDataList().add(recordData);
             }
         }
 
@@ -131,12 +136,23 @@ public class DailyRecordService {
      * @param userId 使用者 ID
      * @return 記錄詳情 DTO 列表
      */
+    @Deprecated
     @Transactional(readOnly = true)
     public List<DailyRecordDetailDTO> getAllRecordsByUserId(Long userId) {
         List<DailyRecord> dailyRecords = dailyRecordRepository.findByUserIdOrderByRecordDateDesc(userId);
         return dailyRecords.stream()
                 .map(this::convertToDetailDTO)
                 .collect(Collectors.toList());
+    }
+
+    public List<DailyRecordDetailDTO> getRecordsByUserId(Long userId, SearchRequestDTO<DailyRecord> request) {
+        SearchObj<DailyRecord> searchObj = request.toSearchObj();
+
+        SearchObj<DailyRecord> updatedSearchObj = searchObj.addSpecification(
+            (root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get("user").get("id"), userId), WhereObj.Logic.AND);
+        
+        Page<DailyRecord> dailyRecords = dailyRecordRepository.search(updatedSearchObj);
+        return dailyRecords.map(this::convertToDetailDTO).toList();
     }
 
     /**
