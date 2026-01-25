@@ -15,8 +15,8 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import tw.danielchiang.health_log.data.repository.UserRepository;
-import tw.danielchiang.health_log.model.dto.AuthResponseDTO;
-import tw.danielchiang.health_log.model.dto.LoginRequestDTO;
+import tw.danielchiang.health_log.model.dto.reponse.AuthResponseDTO;
+import tw.danielchiang.health_log.model.dto.request.LoginRequestDTO;
 import tw.danielchiang.health_log.model.entity.Role;
 import tw.danielchiang.health_log.model.entity.User;
 

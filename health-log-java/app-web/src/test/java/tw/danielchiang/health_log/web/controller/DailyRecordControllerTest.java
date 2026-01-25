@@ -33,8 +33,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import tw.danielchiang.health_log.model.dto.DailyRecordDetailDTO;
-import tw.danielchiang.health_log.model.dto.RecordRequestDTO;
+import tw.danielchiang.health_log.model.dto.reponse.DailyRecordDetailDTO;
+import tw.danielchiang.health_log.model.dto.request.RecordRequestDTO;
 import tw.danielchiang.health_log.service.DailyRecordService;
 import tw.danielchiang.health_log.web.util.SecurityUtil;
 

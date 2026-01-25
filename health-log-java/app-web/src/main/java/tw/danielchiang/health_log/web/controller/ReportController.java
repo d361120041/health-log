@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import tw.danielchiang.health_log.model.dto.TrendDataPointDTO;
+import tw.danielchiang.health_log.model.dto.reponse.TrendDataPointDTO;
 import tw.danielchiang.health_log.service.ReportService;
 import tw.danielchiang.health_log.web.util.SecurityUtil;
 

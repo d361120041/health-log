@@ -1,4 +1,4 @@
-package tw.danielchiang.health_log.model.dto;
+package tw.danielchiang.health_log.model.dto.reponse;
 
 import java.time.LocalDate;
 

@@ -14,10 +14,10 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import tw.danielchiang.health_log.model.dto.AuthResponseDTO;
-import tw.danielchiang.health_log.model.dto.LoginRequestDTO;
-import tw.danielchiang.health_log.model.dto.RegisterRequestDTO;
-import tw.danielchiang.health_log.model.dto.VerifyEmailRequestDTO;
+import tw.danielchiang.health_log.model.dto.reponse.AuthResponseDTO;
+import tw.danielchiang.health_log.model.dto.request.LoginRequestDTO;
+import tw.danielchiang.health_log.model.dto.request.RegisterRequestDTO;
+import tw.danielchiang.health_log.model.dto.request.VerifyEmailRequestDTO;
 import tw.danielchiang.health_log.service.AuthService;
 
 /**

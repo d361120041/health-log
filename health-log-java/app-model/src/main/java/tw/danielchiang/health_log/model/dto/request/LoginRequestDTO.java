@@ -1,4 +1,4 @@
-package tw.danielchiang.health_log.model.dto;
+package tw.danielchiang.health_log.model.dto.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

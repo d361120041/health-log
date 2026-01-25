@@ -20,8 +20,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import tw.danielchiang.health_log.model.dto.AuthResponseDTO;
-import tw.danielchiang.health_log.model.dto.LoginRequestDTO;
+import tw.danielchiang.health_log.model.dto.reponse.AuthResponseDTO;
+import tw.danielchiang.health_log.model.dto.request.LoginRequestDTO;
 import tw.danielchiang.health_log.service.AuthService;
 
 /**

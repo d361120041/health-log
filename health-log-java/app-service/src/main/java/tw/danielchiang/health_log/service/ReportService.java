@@ -13,7 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import tw.danielchiang.health_log.data.repository.DailyRecordRepository;
 import tw.danielchiang.health_log.data.repository.FieldSettingRepository;
 import tw.danielchiang.health_log.data.repository.RecordDataRepository;
-import tw.danielchiang.health_log.model.dto.TrendDataPointDTO;
+import tw.danielchiang.health_log.model.dto.reponse.TrendDataPointDTO;
 import tw.danielchiang.health_log.model.entity.DailyRecord;
 import tw.danielchiang.health_log.model.entity.FieldSetting;
 import tw.danielchiang.health_log.model.entity.RecordData;

@@ -22,7 +22,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
-import tw.danielchiang.health_log.model.dto.TrendDataPointDTO;
+import tw.danielchiang.health_log.model.dto.reponse.TrendDataPointDTO;
 import tw.danielchiang.health_log.service.ReportService;
 import tw.danielchiang.health_log.web.util.SecurityUtil;
 
