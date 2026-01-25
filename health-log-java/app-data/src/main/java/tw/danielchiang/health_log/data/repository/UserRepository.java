@@ -2,7 +2,6 @@ package tw.danielchiang.health_log.data.repository;
 
 import java.util.Optional;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import tw.danielchiang.health_log.model.entity.User;
@@ -11,7 +10,7 @@ import tw.danielchiang.health_log.model.entity.User;
  * 使用者 Repository
  */
 @Repository
-public interface UserRepository extends JpaRepository<User, Long> {
+public interface UserRepository extends BaseRepository<User, Long> {
 
     /**
      * 根據 email 查詢使用者

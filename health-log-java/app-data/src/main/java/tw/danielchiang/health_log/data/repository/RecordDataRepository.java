@@ -3,7 +3,6 @@ package tw.danielchiang.health_log.data.repository;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,7 +14,7 @@ import tw.danielchiang.health_log.model.entity.RecordData;
  * 記錄數值 Repository
  */
 @Repository
-public interface RecordDataRepository extends JpaRepository<RecordData, Long> {
+public interface RecordDataRepository extends BaseRepository<RecordData, Long> {
 
     /**
      * 根據記錄 ID 查詢所有記錄數值

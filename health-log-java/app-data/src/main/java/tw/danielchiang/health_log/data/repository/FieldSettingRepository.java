@@ -3,7 +3,6 @@ package tw.danielchiang.health_log.data.repository;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import tw.danielchiang.health_log.model.entity.FieldSetting;
@@ -12,7 +11,7 @@ import tw.danielchiang.health_log.model.entity.FieldSetting;
  * 欄位設定 Repository
  */
 @Repository
-public interface FieldSettingRepository extends JpaRepository<FieldSetting, Integer> {
+public interface FieldSettingRepository extends BaseRepository<FieldSetting, Integer> {
 
     /**
      * 查詢所有欄位設定，按 setting_id 升序排序

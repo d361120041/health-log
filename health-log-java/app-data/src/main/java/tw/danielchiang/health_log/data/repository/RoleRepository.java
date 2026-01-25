@@ -2,7 +2,6 @@ package tw.danielchiang.health_log.data.repository;
 
 import java.util.Optional;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import tw.danielchiang.health_log.model.entity.Role;
@@ -11,7 +10,7 @@ import tw.danielchiang.health_log.model.entity.Role;
  * 角色 Repository
  */
 @Repository
-public interface RoleRepository extends JpaRepository<Role, Integer> {
+public interface RoleRepository extends BaseRepository<Role, Integer> {
 
     /**
      * 根據角色名稱查詢

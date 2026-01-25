@@ -4,7 +4,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -15,7 +14,7 @@ import tw.danielchiang.health_log.model.entity.DailyRecord;
  * 每日記錄 Repository
  */
 @Repository
-public interface DailyRecordRepository extends JpaRepository<DailyRecord, Long> {
+public interface DailyRecordRepository extends BaseRepository<DailyRecord, Long> {
 
     /**
      * 根據使用者 ID 和記錄日期查詢
@@ -40,6 +39,7 @@ public interface DailyRecordRepository extends JpaRepository<DailyRecord, Long> 
      * @param userId 使用者 ID
      * @return 記錄列表
      */
+    @Deprecated
     List<DailyRecord> findByUserIdOrderByRecordDateDesc(Long userId);
 }
 
