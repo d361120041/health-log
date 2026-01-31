@@ -19,14 +19,14 @@
           <span class="nav-icon">📝</span>
           <span class="nav-text">記錄</span>
         </router-link>
-        <!-- <router-link
+        <router-link
           to="/reports"
           class="nav-link"
           active-class="active"
         >
           <span class="nav-icon">📈</span>
           <span class="nav-text">報告</span>
-        </router-link> -->
+        </router-link>
         <router-link
           v-if="isAdmin"
           to="/admin/settings"
