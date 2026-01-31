@@ -10,13 +10,7 @@
     <!-- 使用分頁元件 -->
     <Pagination
       v-if="!isLoading && pagination.totalElements > 0"
-      :current-page="pagination.currentPage"
-      :page-size="pagination.pageSize"
-      :total-elements="pagination.totalElements"
-      :total-pages="pagination.totalPages"
-      :first="pagination.first"
-      :last="pagination.last"
-      :number-of-elements="pagination.numberOfElements"
+      :pagination="pagination"
       :page-size-options="[5, 10, 20, 50]"
       @page-change="handlePageChange"
       @page-size-change="handlePageSizeChange"

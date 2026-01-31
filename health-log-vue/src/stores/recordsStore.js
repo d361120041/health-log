@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import apiClient from '@/services/apiClient'
+import { usePagination } from '@/composables/usePagination'
 
 /**
  * 記錄 Store
@@ -13,16 +14,8 @@ export const useRecordsStore = defineStore('records', () => {
   const isLoading = ref(false)
   const error = ref(null)
   
-  // 分頁相關狀態
-  const pagination = ref({
-    currentPage: 0, // 當前頁碼（從0開始）
-    pageSize: 10, // 每頁大小
-    totalElements: 0, // 總記錄數
-    totalPages: 0, // 總頁數
-    first: true, // 是否為第一頁
-    last: false, // 是否為最後一頁
-    numberOfElements: 0 // 當前頁實際元素數量
-  })
+  // 使用 Pagination Composable（初始每頁大小為 5，因為 RecordList 預設使用 5）
+  const { pagination, updateFromApiResponse, reset: resetPagination } = usePagination(5)
 
   /**
    * 根據日期獲取單日記錄
@@ -91,16 +84,8 @@ export const useRecordsStore = defineStore('records', () => {
       // 更新記錄列表
       recordsList.value = pageData.content || []
       
-      // 更新分頁信息
-      pagination.value = {
-        currentPage: pageData.number ?? page,
-        pageSize: pageData.size ?? size,
-        totalElements: pageData.totalElements ?? 0,
-        totalPages: pageData.totalPages ?? 0,
-        first: pageData.first ?? true,
-        last: pageData.last ?? false,
-        numberOfElements: pageData.numberOfElements ?? 0
-      }
+      // 更新分頁信息（使用 composable 的方法）
+      updateFromApiResponse(pageData)
       
       return recordsList.value
     } catch (err) {
@@ -272,15 +257,7 @@ export const useRecordsStore = defineStore('records', () => {
     recordsList.value = []
     isLoading.value = false
     error.value = null
-    pagination.value = {
-      currentPage: 0,
-      pageSize: 10,
-      totalElements: 0,
-      totalPages: 0,
-      first: true,
-      last: false,
-      numberOfElements: 0
-    }
+    resetPagination()
   }
 
   return {

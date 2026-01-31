@@ -11,7 +11,7 @@
       <div v-if="showPageSizeSelector" class="pagination-size-selector">
         <label>每頁顯示：</label>
         <select 
-          :value="pageSize" 
+          :value="pagination.pageSize" 
           @change="handlePageSizeChange" 
           class="page-size-select"
         >
@@ -27,12 +27,12 @@
     </div>
 
     <!-- 分頁導航（底部） -->
-    <div v-if="showNav && totalPages > 1" class="pagination-nav">
+    <div v-if="showNav && pagination.totalPages > 1" class="pagination-nav">
       <button
         @click="handlePrevPage"
-        :disabled="first"
+        :disabled="pagination.first"
         class="pagination-btn"
-        :class="{ disabled: first }"
+        :class="{ disabled: pagination.first }"
       >
         ← 上一頁
       </button>
@@ -42,7 +42,7 @@
           v-for="page in visiblePages"
           :key="page"
           @click="handlePageChange(page)"
-          :class="['pagination-number', { active: page === currentPage }]"
+          :class="['pagination-number', { active: page === pagination.currentPage }]"
         >
           {{ page + 1 }}
         </button>
@@ -50,9 +50,9 @@
       
       <button
         @click="handleNextPage"
-        :disabled="last"
+        :disabled="pagination.last"
         class="pagination-btn"
-        :class="{ disabled: last }"
+        :class="{ disabled: pagination.last }"
       >
         下一頁 →
       </button>
@@ -64,38 +64,19 @@
 import { computed } from 'vue'
 
 const props = defineProps({
-  // 分頁數據
-  currentPage: {
-    type: Number,
+  // 分頁數據（整合成一個物件）
+  pagination: {
+    type: Object,
     required: true,
-    default: 0
-  },
-  pageSize: {
-    type: Number,
-    required: true,
-    default: 10
-  },
-  totalElements: {
-    type: Number,
-    required: true,
-    default: 0
-  },
-  totalPages: {
-    type: Number,
-    required: true,
-    default: 0
-  },
-  first: {
-    type: Boolean,
-    default: true
-  },
-  last: {
-    type: Boolean,
-    default: false
-  },
-  numberOfElements: {
-    type: Number,
-    default: 0
+    default: () => ({
+      currentPage: 0,
+      pageSize: 10,
+      totalElements: 0,
+      totalPages: 0,
+      first: true,
+      last: false,
+      numberOfElements: 0
+    })
   },
   // 顯示控制
   showInfo: {
@@ -126,21 +107,26 @@ const emit = defineEmits(['page-change', 'page-size-change'])
 
 // 計算屬性
 const showPagination = computed(() => {
-  return props.totalPages > 0 || props.totalElements > 0
+  return props.pagination.totalPages > 0 || props.pagination.totalElements > 0
 })
 
 const startIndex = computed(() => {
-  return props.currentPage * props.pageSize + 1
+  return props.pagination.currentPage * props.pagination.pageSize + 1
 })
 
 const endIndex = computed(() => {
-  return Math.min((props.currentPage + 1) * props.pageSize, props.totalElements)
+  return Math.min(
+    (props.pagination.currentPage + 1) * props.pagination.pageSize, 
+    props.pagination.totalElements
+  )
 })
+
+const totalElements = computed(() => props.pagination.totalElements)
 
 // 計算可見的頁碼
 const visiblePages = computed(() => {
-  const total = props.totalPages
-  const current = props.currentPage
+  const total = props.pagination.totalPages
+  const current = props.pagination.currentPage
   const maxVisible = props.maxVisiblePages
   
   if (total <= maxVisible) {
@@ -159,20 +145,20 @@ const visiblePages = computed(() => {
 
 // 事件處理
 const handlePageChange = (page) => {
-  if (page !== props.currentPage && page >= 0 && page < props.totalPages) {
+  if (page !== props.pagination.currentPage && page >= 0 && page < props.pagination.totalPages) {
     emit('page-change', page)
   }
 }
 
 const handleNextPage = () => {
-  if (!props.last) {
-    emit('page-change', props.currentPage + 1)
+  if (!props.pagination.last) {
+    emit('page-change', props.pagination.currentPage + 1)
   }
 }
 
 const handlePrevPage = () => {
-  if (!props.first) {
-    emit('page-change', props.currentPage - 1)
+  if (!props.pagination.first) {
+    emit('page-change', props.pagination.currentPage - 1)
   }
 }
 
