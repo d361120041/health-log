@@ -3,6 +3,7 @@ package tw.danielchiang.health_log.web.controller;
 import java.time.LocalDate;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import tw.danielchiang.health_log.model.domain.PageableData;
 import tw.danielchiang.health_log.model.dto.reponse.DailyRecordDetailDTO;
 import tw.danielchiang.health_log.model.dto.reponse.ResponseDTO;
 import tw.danielchiang.health_log.model.dto.request.RecordRequestDTO;
@@ -57,14 +59,14 @@ public class DailyRecordController {
     }
 
     @PostMapping("/search")
-    public ResponseEntity<ResponseDTO> getRecordsByUserId(
+    public ResponseEntity<ResponseDTO<DailyRecordDetailDTO>> getRecordsByUserId(
             @Valid @RequestBody SearchRequestDTO<DailyRecord> request,
             HttpServletRequest httpRequest) {
-        ResponseDTO responseDTO = new ResponseDTO();
+        ResponseDTO<DailyRecordDetailDTO> responseDTO = new ResponseDTO<>();
         try {
             Long userId = securityUtil.getCurrentUserId(httpRequest);
-            List<DailyRecordDetailDTO> records = dailyRecordService.getRecordsByUserId(userId, request);
-            responseDTO.setData(records);
+            Page<DailyRecordDetailDTO> records = dailyRecordService.getRecordsByUserId(userId, request);
+            responseDTO.setData(PageableData.of(records));
             return ResponseEntity.ok().body(responseDTO);
         } catch (IllegalStateException e) {
             log.warn("Failed to get records: {}", e.getMessage());

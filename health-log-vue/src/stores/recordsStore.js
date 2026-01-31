@@ -12,6 +12,17 @@ export const useRecordsStore = defineStore('records', () => {
   const recordsList = ref([]) // 記錄列表
   const isLoading = ref(false)
   const error = ref(null)
+  
+  // 分頁相關狀態
+  const pagination = ref({
+    currentPage: 0, // 當前頁碼（從0開始）
+    pageSize: 10, // 每頁大小
+    totalElements: 0, // 總記錄數
+    totalPages: 0, // 總頁數
+    first: true, // 是否為第一頁
+    last: false, // 是否為最後一頁
+    numberOfElements: 0 // 當前頁實際元素數量
+  })
 
   /**
    * 根據日期獲取單日記錄
@@ -42,15 +53,55 @@ export const useRecordsStore = defineStore('records', () => {
   }
 
   /**
-   * 獲取當前用戶的所有記錄
-   * @returns {Promise<Array>}
+   * 獲取當前用戶的記錄列表（支援分頁）
+   * @param {Object} options - 可選的搜尋參數
+   * @param {number} options.page - 頁碼（從0開始），預設使用 pagination.currentPage
+   * @param {number} options.size - 每頁大小，預設使用 pagination.pageSize
+   * @returns {Promise<Array>} 返回記錄列表
    */
-  const fetchRecordsList = async () => {
+  const fetchRecordsList = async (options = {}) => {
     isLoading.value = true
     error.value = null
     try {
-      const response = await apiClient.get('/records')
-      recordsList.value = response.data || []
+      const page = options.page ?? pagination.value.currentPage
+      const size = options.size ?? pagination.value.pageSize
+
+      // 構建搜尋請求體
+      const searchRequest = {
+        specObj: null, // 不設置查詢條件，後端會自動過濾當前用戶的記錄
+        pageObj: {
+          isPaged: true,
+          page: page,
+          size: size,
+          isSorted: true,
+          orders: [
+            {
+              field: 'recordDate',
+              order: 'DESC' // 按日期降序排序
+            }
+          ]
+        }
+      }
+
+      const response = await apiClient.post('/records/search', searchRequest)
+      
+      // 後端返回格式：{ status, message, data: { content, totalElements, ... } }
+      const pageData = response.data?.data || {}
+      
+      // 更新記錄列表
+      recordsList.value = pageData.content || []
+      
+      // 更新分頁信息
+      pagination.value = {
+        currentPage: pageData.number ?? page,
+        pageSize: pageData.size ?? size,
+        totalElements: pageData.totalElements ?? 0,
+        totalPages: pageData.totalPages ?? 0,
+        first: pageData.first ?? true,
+        last: pageData.last ?? false,
+        numberOfElements: pageData.numberOfElements ?? 0
+      }
+      
       return recordsList.value
     } catch (err) {
       error.value = err
@@ -59,6 +110,43 @@ export const useRecordsStore = defineStore('records', () => {
     } finally {
       isLoading.value = false
     }
+  }
+
+  /**
+   * 切換到指定頁碼
+   * @param {number} page - 頁碼（從0開始）
+   */
+  const goToPage = async (page) => {
+    if (page < 0 || (pagination.value.totalPages > 0 && page >= pagination.value.totalPages)) {
+      return
+    }
+    await fetchRecordsList({ page, size: pagination.value.pageSize })
+  }
+
+  /**
+   * 切換到下一頁
+   */
+  const goToNextPage = async () => {
+    if (!pagination.value.last) {
+      await goToPage(pagination.value.currentPage + 1)
+    }
+  }
+
+  /**
+   * 切換到上一頁
+   */
+  const goToPrevPage = async () => {
+    if (!pagination.value.first) {
+      await goToPage(pagination.value.currentPage - 1)
+    }
+  }
+
+  /**
+   * 改變每頁大小
+   * @param {number} size - 每頁大小
+   */
+  const changePageSize = async (size) => {
+    await fetchRecordsList({ page: 0, size }) // 改變大小時重置到第一頁
   }
 
   /**
@@ -123,9 +211,18 @@ export const useRecordsStore = defineStore('records', () => {
       if (dailyRecord.value?.recordDate === dateStr) {
         dailyRecord.value = null
       }
-      recordsList.value = recordsList.value.filter(
-        (r) => r.recordDate !== dateStr
-      )
+      
+      // 重新載入當前頁（如果當前頁沒有數據了，會自動載入上一頁）
+      const currentPage = pagination.value.currentPage
+      await fetchRecordsList({ 
+        page: currentPage, 
+        size: pagination.value.pageSize 
+      })
+      
+      // 如果當前頁沒有數據且不是第一頁，載入上一頁
+      if (recordsList.value.length === 0 && currentPage > 0) {
+        await goToPage(currentPage - 1)
+      }
     } catch (err) {
       error.value = err
       console.error(`Failed to delete record for date ${date}:`, err)
@@ -175,6 +272,15 @@ export const useRecordsStore = defineStore('records', () => {
     recordsList.value = []
     isLoading.value = false
     error.value = null
+    pagination.value = {
+      currentPage: 0,
+      pageSize: 10,
+      totalElements: 0,
+      totalPages: 0,
+      first: true,
+      last: false,
+      numberOfElements: 0
+    }
   }
 
   return {
@@ -183,6 +289,7 @@ export const useRecordsStore = defineStore('records', () => {
     recordsList,
     isLoading,
     error,
+    pagination, // 新增分頁狀態
     // Actions
     fetchRecordByDate,
     fetchRecordsList,
@@ -191,6 +298,10 @@ export const useRecordsStore = defineStore('records', () => {
     clearCurrentRecord,
     clearError,
     reset,
+    goToPage, // 新增：切換頁碼
+    goToNextPage, // 新增：下一頁
+    goToPrevPage, // 新增：上一頁
+    changePageSize, // 新增：改變每頁大小
   }
 })
 

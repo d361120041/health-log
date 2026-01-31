@@ -145,14 +145,14 @@ public class DailyRecordService {
                 .collect(Collectors.toList());
     }
 
-    public List<DailyRecordDetailDTO> getRecordsByUserId(Long userId, SearchRequestDTO<DailyRecord> request) {
+    public Page<DailyRecordDetailDTO> getRecordsByUserId(Long userId, SearchRequestDTO<DailyRecord> request) {
         SearchObj<DailyRecord> searchObj = request.toSearchObj();
 
         SearchObj<DailyRecord> updatedSearchObj = searchObj.addSpecification(
             (root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get("user").get("id"), userId), WhereObj.Logic.AND);
         
         Page<DailyRecord> dailyRecords = dailyRecordRepository.search(updatedSearchObj);
-        return dailyRecords.map(this::convertToDetailDTO).toList();
+        return dailyRecords.map(this::convertToDetailDTO);
     }
 
     /**

@@ -7,10 +7,30 @@
       </router-link>
     </div>
 
+    <!-- 使用分頁元件 -->
+    <Pagination
+      v-if="!isLoading && pagination.totalElements > 0"
+      :current-page="pagination.currentPage"
+      :page-size="pagination.pageSize"
+      :total-elements="pagination.totalElements"
+      :total-pages="pagination.totalPages"
+      :first="pagination.first"
+      :last="pagination.last"
+      :number-of-elements="pagination.numberOfElements"
+      :page-size-options="[5, 10, 20, 50]"
+      @page-change="handlePageChange"
+      @page-size-change="handlePageSizeChange"
+    />
+
     <div v-if="isLoading" class="loading-message">載入中...</div>
-    <div v-else-if="error" class="error-message">{{ error }}</div>
-    <div v-else-if="recordsList.length === 0" class="empty-message">
+    <div v-else-if="error" class="error-message">
+      {{ errorMessage }}
+    </div>
+    <div v-else-if="recordsList.length === 0 && pagination.currentPage === 0" class="empty-message">
       目前沒有記錄，<router-link to="/records/new">點擊這裡新增第一筆記錄</router-link>
+    </div>
+    <div v-else-if="recordsList.length === 0" class="empty-message">
+      此頁沒有記錄
     </div>
     <div v-else class="records-grid">
       <div
@@ -57,6 +77,7 @@
 import { onMounted, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useRecordsStore } from '@/stores/recordsStore'
+import Pagination from '@/components/common/Pagination.vue'
 
 const router = useRouter()
 const recordsStore = useRecordsStore()
@@ -66,6 +87,16 @@ const isDeleting = ref(false)
 const recordsList = computed(() => recordsStore.recordsList)
 const isLoading = computed(() => recordsStore.isLoading)
 const error = computed(() => recordsStore.error)
+const pagination = computed(() => recordsStore.pagination)
+
+// 優化錯誤訊息顯示
+const errorMessage = computed(() => {
+  if (!error.value) return ''
+  if (typeof error.value === 'string') return error.value
+  if (error.value?.message) return error.value.message
+  if (error.value?.response?.data?.message) return error.value.response.data.message
+  return '載入記錄時發生錯誤，請稍後再試'
+})
 
 const formatDate = (dateString) => {
   const date = new Date(dateString)
@@ -74,6 +105,14 @@ const formatDate = (dateString) => {
     month: 'long',
     day: 'numeric',
   })
+}
+
+const handlePageChange = async (page) => {
+  await recordsStore.goToPage(page)
+}
+
+const handlePageSizeChange = async (size) => {
+  await recordsStore.changePageSize(size)
 }
 
 const handleDelete = async (date) => {
@@ -93,9 +132,11 @@ const handleDelete = async (date) => {
 }
 
 onMounted(async () => {
-  if (recordsStore.recordsList.length === 0) {
-    await recordsStore.fetchRecordsList()
-  }
+  // 載入第一頁數據
+  await recordsStore.fetchRecordsList({
+    page: 0,
+    size: 5
+  })
 })
 </script>
 
