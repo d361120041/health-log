@@ -7,6 +7,32 @@
       </button>
     </div>
 
+    <!-- 統計訊息區塊 -->
+    <div class="stats-section">
+      <div class="stat-card" :class="{ 'warning': !hasTodayRecord }">
+        <div class="stat-icon">📝</div>
+        <div class="stat-content">
+          <div class="stat-label">今日狀態</div>
+          <div class="stat-value">
+            {{ hasTodayRecord ? '✓ 今日已記錄' : '⚠ 您今日還沒紀錄唷！' }}
+          </div>
+        </div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-icon">📅</div>
+        <div class="stat-content">
+          <div class="stat-label">{{ currentMonthLabel }}記錄</div>
+          <div class="stat-value">
+            已記錄 <strong>{{ currentMonthRecordCount }}</strong> 天
+          </div>
+          <div class="stat-subtext">
+            共 {{ totalDaysInMonth }} 天
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="calendar-section">
       <Calendar
         :current-month="currentMonth"
@@ -51,6 +77,9 @@ const dialogPosition = ref(null)
 // 月份記錄列表（用於標記月曆）
 const monthRecords = ref([])
 
+// 今日記錄狀態（獨立追蹤，不依賴當前顯示月份）
+const todayRecord = ref(null)
+
 // 獲取當前月份有記錄的日期列表
 const recordedDates = computed(() => {
   return monthRecords.value.map(record => record.recordDate)
@@ -58,6 +87,32 @@ const recordedDates = computed(() => {
 
 // 判斷是否有記錄
 const hasRecord = computed(() => !!selectedRecord.value)
+
+// 計算今日是否有記錄
+const hasTodayRecord = computed(() => {
+  return todayRecord.value !== null
+})
+
+// 計算本月已記錄天數
+const currentMonthRecordCount = computed(() => {
+  return monthRecords.value.length
+})
+
+// 計算本月總天數
+const totalDaysInMonth = computed(() => {
+  const year = currentMonth.value.getFullYear()
+  const month = currentMonth.value.getMonth()
+  return new Date(year, month + 1, 0).getDate()
+})
+
+// 當前顯示月份的標籤
+const currentMonthLabel = computed(() => {
+  const today = new Date()
+  const year = currentMonth.value.getFullYear()
+  const month = currentMonth.value.getMonth()
+  const isCurrentMonth = year === today.getFullYear() && month === today.getMonth()
+  return isCurrentMonth ? '本月' : `${year}年${month + 1}月`
+})
 
 // 格式化日期為 YYYY-MM-DD
 const formatDate = (date) => {
@@ -124,6 +179,22 @@ const handleMonthChange = async (newMonth) => {
   await loadMonthRecords()
 }
 
+// 載入今日記錄
+const loadTodayRecord = async () => {
+  const today = formatDate(new Date())
+  try {
+    const record = await recordsStore.fetchRecordByDate(today)
+    todayRecord.value = record
+  } catch (err) {
+    // 404 表示今天沒有記錄，這是正常情況
+    if (err.response?.status === 404) {
+      todayRecord.value = null
+    } else {
+      console.error('Failed to load today record:', err)
+    }
+  }
+}
+
 // 載入當前月份的記錄
 const loadMonthRecords = async () => {
   const year = currentMonth.value.getFullYear()
@@ -136,6 +207,14 @@ const loadMonthRecords = async () => {
     // 使用 search API 獲取該月份的所有記錄
     const records = await recordsStore.fetchRecordsByDateRange(startDate, endDate)
     monthRecords.value = records
+    
+    // 如果當前顯示的月份是本月，更新今日記錄狀態
+    const today = new Date()
+    if (year === today.getFullYear() && month === today.getMonth()) {
+      const todayStr = formatDate(today)
+      const todayRecordInMonth = records.find(r => r.recordDate === todayStr)
+      todayRecord.value = todayRecordInMonth || null
+    }
   } catch (err) {
     console.error('Failed to load month records:', err)
     monthRecords.value = []
@@ -156,12 +235,18 @@ const closeDialog = () => {
 }
 
 onMounted(async () => {
-  await loadMonthRecords()
+  await Promise.all([
+    loadTodayRecord(),
+    loadMonthRecords()
+  ])
 })
 
 // 當從其他頁面返回時重新載入記錄
 onActivated(async () => {
-  await loadMonthRecords()
+  await Promise.all([
+    loadTodayRecord(),
+    loadMonthRecords()
+  ])
 })
 </script>
 
@@ -202,10 +287,85 @@ onActivated(async () => {
   background-color: #357abd;
 }
 
+.stats-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: all 0.2s;
+}
+
+.stat-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.stat-card.warning {
+  border-left: 4px solid #ff9800;
+  background: linear-gradient(135deg, #fff3e0 0%, #ffffff 100%);
+}
+
+.stat-icon {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: #666;
+  margin-bottom: 0.25rem;
+}
+
+.stat-value {
+  font-size: 1.125rem;
+  color: #333;
+  font-weight: 500;
+}
+
+.stat-value strong {
+  color: #4a90e2;
+  font-size: 1.5rem;
+}
+
+.stat-subtext {
+  font-size: 0.75rem;
+  color: #999;
+  margin-top: 0.25rem;
+}
+
 .calendar-section {
   background: white;
   border-radius: 8px;
   padding: 2rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+  .stats-section {
+    grid-template-columns: 1fr;
+  }
+  
+  .stat-card {
+    padding: 1rem;
+  }
+  
+  .stat-icon {
+    font-size: 2rem;
+  }
 }
 </style>
