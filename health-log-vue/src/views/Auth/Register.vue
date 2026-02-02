@@ -125,7 +125,7 @@ const handleRegister = async () => {
 onMounted(() => {
   // 如果已經登入，重定向到記錄列表
   if (authStore.isAuthenticated) {
-    router.push('/records')
+    router.back()
   }
 })
 </script>

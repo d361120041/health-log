@@ -3,7 +3,7 @@
     <div class="navbar-container">
       <!-- Logo / 應用程式標題 -->
       <div class="navbar-brand">
-        <router-link to="/records" class="brand-link">
+        <router-link to="/" class="brand-link">
           <span class="brand-icon">📊</span>
           <span class="brand-text">Health Log</span>
         </router-link>
@@ -11,6 +11,14 @@
 
       <!-- 導航連結 -->
       <div class="navbar-links">
+        <router-link
+          to="/"
+          class="nav-link"
+          active-class="active"
+        >
+          <span class="nav-icon">🏠</span>
+          <span class="nav-text">首頁</span>
+        </router-link>
         <router-link
           to="/records"
           class="nav-link"

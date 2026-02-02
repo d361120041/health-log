@@ -68,7 +68,7 @@ const handleLogin = async () => {
   try {
     await authStore.login(email.value, password.value)
     // 登入成功，重定向到原始路徑或記錄列表
-    const redirect = route.query.redirect || '/records'
+    const redirect = route.query.redirect || '/'
     router.push(redirect)
   } catch (err) {
     error.value = err.response?.status === 401
@@ -83,7 +83,7 @@ const handleLogin = async () => {
 onMounted(() => {
   // 如果已經登入，重定向到記錄列表
   if (authStore.isAuthenticated) {
-    router.push('/records')
+    router.back()
   }
 })
 </script>

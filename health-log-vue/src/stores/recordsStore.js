@@ -135,6 +135,53 @@ export const useRecordsStore = defineStore('records', () => {
   }
 
   /**
+   * 根據日期範圍獲取記錄列表（用於月曆顯示）
+   * @param {string} startDate 開始日期 (YYYY-MM-DD)
+   * @param {string} endDate 結束日期 (YYYY-MM-DD)
+   * @returns {Promise<Array>} 返回記錄列表
+   */
+  const fetchRecordsByDateRange = async (startDate, endDate) => {
+    isLoading.value = true
+    error.value = null
+    try {
+      // 構建搜尋請求，使用較大的 size 來獲取整個月的記錄
+      const searchRequest = {
+        specObj: null, // 不設置查詢條件，後端會自動過濾當前用戶的記錄
+        pageObj: {
+          isPaged: true,
+          page: 0,
+          size: 1000, // 足夠大的數字來獲取整個月的記錄
+          isSorted: true,
+          orders: [
+            {
+              field: 'recordDate',
+              order: 'DESC' // 按日期降序排序
+            }
+          ]
+        }
+      }
+
+      const response = await apiClient.post('/records/search', searchRequest)
+      const pageData = response.data?.data || {}
+      const allRecords = pageData.content || []
+      
+      // 在前端過濾日期範圍
+      const filteredRecords = allRecords.filter(record => {
+        const recordDate = record.recordDate
+        return recordDate >= startDate && recordDate <= endDate
+      })
+      
+      return filteredRecords
+    } catch (err) {
+      error.value = err
+      console.error('Failed to fetch records by date range:', err)
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  /**
    * 保存記錄（創建或更新）
    * @param {Object} record 記錄物件
    * @param {string|Date} record.recordDate 記錄日期
@@ -270,6 +317,7 @@ export const useRecordsStore = defineStore('records', () => {
     // Actions
     fetchRecordByDate,
     fetchRecordsList,
+    fetchRecordsByDateRange, // 新增：根據日期範圍獲取記錄
     saveRecord,
     deleteRecord,
     clearCurrentRecord,

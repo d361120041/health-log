@@ -2,7 +2,7 @@
   <div class="record-form-container">
     <div class="header">
       <h1>{{ isEditMode ? '編輯記錄' : '新增記錄' }}</h1>
-      <router-link to="/records" class="btn btn-secondary">返回列表</router-link>
+      <button type="button" class="btn btn-secondary" @click="$router.back()">返回</button>
     </div>
 
     <div v-if="isLoadingRecord" class="loading-message">載入記錄中...</div>
@@ -72,9 +72,19 @@ const initDate = () => {
   if (isEditMode.value) {
     selectedDate.value = route.params.date
   } else {
-    // 預設為今天
-    const today = new Date()
-    selectedDate.value = today.toISOString().split('T')[0]
+    // 檢查是否有 query 參數中的日期
+    if (route.query.date) {
+      selectedDate.value = route.query.date
+    } else {
+      // 預設為今天
+      // 時區注意：直接用 toISOString().split('T')[0] 會以 UTC 時區取日期，
+      // 在台灣凌晨時可能會出現前一天的日期。如果需以本地時區取 YYYY-MM-DD 格式：
+      const today = new Date()
+      const year = today.getFullYear()
+      const month = String(today.getMonth() + 1).padStart(2, '0')
+      const day = String(today.getDate()).padStart(2, '0')
+      selectedDate.value = `${year}-${month}-${day}`
+    }
   }
 }
 
@@ -121,7 +131,7 @@ const handleSubmit = async (fieldValues) => {
     })
 
     // 儲存成功，返回列表
-    router.push('/records')
+    router.back()
   } catch (err) {
     console.error('Save record error:', err)
     alert('儲存失敗，請稍後再試')
@@ -134,7 +144,7 @@ const handleSubmit = async (fieldValues) => {
 }
 
 const handleCancel = () => {
-  router.push('/records')
+  router.back()
 }
 
 onMounted(async () => {

@@ -6,7 +6,11 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      redirect: '/records',
+      name: 'Home',
+      component: () => import('@/views/Home.vue'),
+      meta: {
+        requiresAuth: true,
+      },
     },
     {
       path: '/login',
@@ -76,7 +80,7 @@ const router = createRouter({
     },
     {
       path: '/:pathMatch(.*)*',
-      redirect: '/records', // 404 重定向到記錄列表
+      redirect: '/', // 404 重定向到首頁
     },
   ],
 })
@@ -101,9 +105,9 @@ router.beforeEach((to, from, next) => {
       const user = authStore.user
       // 檢查用戶角色是否為 ADMIN
       if (!user || user.role !== 'ADMIN') {
-        // 沒有 Admin 權限，導向記錄列表並顯示錯誤訊息
+        // 沒有 Admin 權限，導向首頁並顯示錯誤訊息
         next({
-          name: 'RecordList',
+          name: 'Home',
           query: { error: 'unauthorized' },
         })
         return
@@ -111,10 +115,10 @@ router.beforeEach((to, from, next) => {
     }
   }
 
-  // 如果已登入且訪問登入/註冊/驗證頁，重定向到記錄列表
+  // 如果已登入且訪問登入/註冊/驗證頁，重定向到首頁
   if ((to.name === 'Login' || to.name === 'Register' || to.name === 'VerifyEmail') && authStore.isAuthenticated) {
     // 檢查是否有重定向路徑
-    const redirect = from.query.redirect || '/records'
+    const redirect = from.query.redirect || '/'
     next(redirect)
     return
   }
