@@ -12,8 +12,17 @@
       </div>
 
       <div class="dialog-content">
-        <div v-if="hasRecord" class="message">
-          <p>此日期已有記錄</p>
+        <div v-if="hasRecord && record" class="record-details">
+          <div class="record-content">
+            <div
+              v-for="(value, fieldName) in record.fieldValues"
+              :key="fieldName"
+              class="record-field"
+            >
+              <span class="field-name">{{ fieldName }}:</span>
+              <span class="field-value">{{ formatFieldValue(fieldName, value) }}</span>
+            </div>
+          </div>
         </div>
         <div v-else class="message">
           <p>此日期尚未記錄</p>
@@ -49,6 +58,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useSettingsStore } from '@/stores/settingsStore'
 
 const props = defineProps({
   date: {
@@ -58,6 +68,10 @@ const props = defineProps({
   hasRecord: {
     type: Boolean,
     default: false
+  },
+  record: {
+    type: Object,
+    default: null
   },
   show: {
     type: Boolean,
@@ -72,6 +86,7 @@ const props = defineProps({
 const emit = defineEmits(['close'])
 
 const router = useRouter()
+const settingsStore = useSettingsStore()
 
 // 格式化顯示日期
 const formatDisplayDate = (dateString) => {
@@ -82,6 +97,19 @@ const formatDisplayDate = (dateString) => {
     day: 'numeric',
     weekday: 'long'
   })
+}
+
+// 格式化欄位值（包含單位）
+const formatFieldValue = (fieldName, value) => {
+  if (!value || value.trim() === '') {
+    return '-'
+  }
+  
+  const fieldSetting = settingsStore.getFieldSettingByName(fieldName)
+  if (fieldSetting && fieldSetting.unit) {
+    return `${value} ${fieldSetting.unit}`
+  }
+  return value
 }
 
 // 處理新增
@@ -116,7 +144,7 @@ const dialogStyle = computed(() => {
     }
   }
   
-  const dialogWidth = 280
+  const dialogWidth = 320
   const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1200
   
   // 對話框頂端對齊日期頂端
@@ -152,7 +180,8 @@ const dialogStyle = computed(() => {
   position: fixed;
   background: white;
   border-radius: 8px;
-  width: 280px;
+  width: 320px;
+  max-width: calc(100vw - 20px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   z-index: 1000;
   min-width: 200px;
@@ -200,6 +229,30 @@ const dialogStyle = computed(() => {
 
 .dialog-content {
   padding: 1rem;
+}
+
+.record-details {
+  margin-bottom: 1rem;
+}
+
+.record-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.record-field {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.field-name {
+  font-weight: 500;
+  color: #666;
+}
+
+.field-value {
+  color: #333;
 }
 
 .message {

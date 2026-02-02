@@ -21,6 +21,7 @@
       v-if="showDialog"
       :date="selectedDate"
       :has-record="hasRecord"
+      :record="selectedRecord"
       :position="dialogPosition"
       :show="showDialog"
       @close="closeDialog"
@@ -85,25 +86,23 @@ const handleDateClick = async (date, position) => {
   const isCurrentMonth = clickedDate.getFullYear() === currentMonth.value.getFullYear() &&
                          clickedDate.getMonth() === currentMonth.value.getMonth()
   
-  // 先從已載入的月份記錄中查找
-  const existingRecord = monthRecords.value.find(
-    record => {
-      // 確保比較的都是字符串格式
-      const recordDateStr = typeof record.recordDate === 'string' 
-        ? record.recordDate 
-        : formatDate(record.recordDate)
-      return recordDateStr === dateStr
+  // 如果屬於當前月份，先使用 recordedDates 快速判斷是否有記錄
+  if (isCurrentMonth) {
+    if (recordedDates.value.includes(dateStr)) {
+      // 有記錄，從 monthRecords 中查找完整記錄對象
+      const existingRecord = monthRecords.value.find(
+        record => {
+          const recordDateStr = typeof record.recordDate === 'string' 
+            ? record.recordDate 
+            : formatDate(record.recordDate)
+          return recordDateStr === dateStr
+        }
+      )
+      selectedRecord.value = existingRecord
+    } else {
+      // 沒有記錄
+      selectedRecord.value = null
     }
-  )
-  
-  if (existingRecord) {
-    // 如果找到了，直接使用，不需要再打 API
-    selectedRecord.value = existingRecord
-    showDialog.value = true
-  } else if (isCurrentMonth) {
-    // 如果屬於當前月份但沒找到，表示該日期確實沒有記錄
-    // 不需要再打 API，因為 monthRecords 已經包含了該月份的所有記錄
-    selectedRecord.value = null
     showDialog.value = true
   } else {
     // 如果不屬於當前月份，需要發送 API 請求（因為該月份的記錄還沒載入）
