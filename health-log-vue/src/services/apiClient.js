@@ -177,7 +177,7 @@ apiClient.interceptors.response.use(
       // 404: 資源不存在
       if (status === 404) {
         const message = responseData?.message || '資源不存在'
-        alert(message)
+        // alert(message)
         error.message = message
         console.error('Not found:', error.config?.url)
         return Promise.reject(error)

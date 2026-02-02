@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class DailyRecordDetailDTO extends ResponseDTO {
+public class DailyRecordDetailDTO {
 
     private Long recordId;
     private LocalDate recordDate;
