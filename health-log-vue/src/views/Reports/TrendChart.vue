@@ -304,6 +304,7 @@
           </div>
           <EnumPeriodStackedChart
             title="週次選項次數（堆疊）"
+            granularity="week"
             :rows="enumWeeklyRows"
             :option-order="selectedEnumOptionOrder"
           />

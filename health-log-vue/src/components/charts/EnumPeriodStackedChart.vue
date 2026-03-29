@@ -28,6 +28,12 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  /** week：X 軸顯示「第1週、第2週…」，tooltip 仍顯示完整日期區間；month：X 軸用 periodLabel */
+  granularity: {
+    type: String,
+    default: 'month',
+    validator: (v) => v === 'week' || v === 'month',
+  },
 })
 
 const hasData = computed(() => {
@@ -41,7 +47,10 @@ const chartOption = computed(() => {
   if (!rows.length) return {}
 
   const columns = rows[0].columns || []
-  const categories = rows.map((x) => x.periodLabel)
+  const isWeek = props.granularity === 'week'
+  const categories = isWeek
+    ? rows.map((_, i) => `第${i + 1}週`)
+    : rows.map((x) => x.periodLabel)
 
   const series = columns.map((name, i) => ({
     name,
@@ -62,6 +71,20 @@ const chartOption = computed(() => {
     tooltip: {
       trigger: 'axis',
       axisPointer: { type: 'shadow' },
+      formatter: (params) => {
+        if (!Array.isArray(params) || !params.length) return ''
+        const idx = params[0].dataIndex
+        const row = rows[idx]
+        const rangeLine =
+          row?.periodLabel != null && String(row.periodLabel).trim() !== ''
+            ? `<strong>${row.periodLabel}</strong>`
+            : ''
+        const lines = params.map(
+          (p) =>
+            `${p.marker}${p.seriesName}：${p.value != null ? p.value : 0}`
+        )
+        return [rangeLine, ...lines].filter(Boolean).join('<br/>')
+      },
     },
     legend: {
       type: 'scroll',
@@ -83,7 +106,12 @@ const chartOption = computed(() => {
       data: categories,
       axisLabel: {
         interval: 0,
-        rotate: categories.length > 8 ? 32 : 0,
+        rotate:
+          isWeek && categories.length > 12
+            ? 32
+            : !isWeek && categories.length > 8
+              ? 32
+              : 0,
         fontSize: 11,
       },
     },
