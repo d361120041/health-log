@@ -547,6 +547,10 @@ const quickRangePresets = [
   { id: 'cm', label: '本月', mode: 'thisMonth' },
   { id: 'cq', label: '本季', mode: 'thisQuarter' },
   { id: 'cy', label: '本年', mode: 'thisYear' },
+  { id: 'lw', label: '上週', mode: 'lastWeek' },
+  { id: 'lm', label: '上個月', mode: 'lastMonth' },
+  { id: 'lq', label: '上一季', mode: 'lastQuarter' },
+  { id: 'ly', label: '去年', mode: 'lastYear' },
   { id: '7', label: '近1週', mode: 'rolling', days: 7 },
   { id: '14', label: '近2週', mode: 'rolling', days: 14 },
   { id: '30', label: '近1個月', mode: 'rolling', days: 30 },
@@ -585,6 +589,40 @@ async function onQuickRange(preset) {
     case 'thisYear':
       applyFixedEndRange(new Date(today.getFullYear(), 0, 1), today)
       break
+    case 'lastWeek': {
+      const thisMon = startOfThisWeekMonday(today)
+      const lastWeekEnd = new Date(thisMon)
+      lastWeekEnd.setDate(lastWeekEnd.getDate() - 1)
+      const lastWeekStart = new Date(lastWeekEnd)
+      lastWeekStart.setDate(lastWeekStart.getDate() - 6)
+      applyFixedEndRange(lastWeekStart, lastWeekEnd)
+      break
+    }
+    case 'lastMonth': {
+      const end = new Date(today.getFullYear(), today.getMonth(), 0)
+      const start = new Date(end.getFullYear(), end.getMonth(), 1)
+      applyFixedEndRange(start, end)
+      break
+    }
+    case 'lastQuarter': {
+      const cq = Math.floor(today.getMonth() / 3)
+      let py = today.getFullYear()
+      let pq = cq - 1
+      if (pq < 0) {
+        pq = 3
+        py -= 1
+      }
+      const sm = pq * 3
+      const start = new Date(py, sm, 1)
+      const end = new Date(py, sm + 3, 0)
+      applyFixedEndRange(start, end)
+      break
+    }
+    case 'lastYear': {
+      const y = today.getFullYear() - 1
+      applyFixedEndRange(new Date(y, 0, 1), new Date(y, 11, 31))
+      break
+    }
     default:
       applyInclusiveDayRange(7)
   }
