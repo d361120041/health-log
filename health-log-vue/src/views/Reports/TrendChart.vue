@@ -29,6 +29,7 @@
           v-model="startDate"
           type="date"
           class="form-input"
+          @change="clearQuickRangeHighlight"
         />
       </div>
 
@@ -39,6 +40,7 @@
           v-model="endDate"
           type="date"
           class="form-input"
+          @change="clearQuickRangeHighlight"
         />
       </div>
 
@@ -49,6 +51,23 @@
       >
         {{ isLoading ? '載入中...' : '查詢' }}
       </button>
+
+      <div class="quick-range-bar">
+        <span class="quick-range-label">快速區間</span>
+        <div class="quick-range-tags">
+          <button
+            v-for="p in quickRangePresets"
+            :key="p.id"
+            type="button"
+            class="quick-range-tag"
+            :class="{ 'quick-range-tag--active': selectedQuickRangeId === p.id }"
+            :disabled="isLoading"
+            @click="onQuickRange(p)"
+          >
+            {{ p.label }}
+          </button>
+        </div>
+      </div>
     </div>
 
     <div v-if="error" class="error-message">{{ error }}</div>
@@ -58,107 +77,203 @@
     
     <!-- NUMBER 類型報表 -->
     <div v-else-if="selectedFieldType === 'NUMBER' && numberReport" class="chart-wrapper">
-      <div class="report-section">
-        <h2>統計摘要</h2>
-        <div class="statistics-grid" v-if="numberReport.statistics">
-          <div class="stat-item">
-            <span class="stat-label">平均值</span>
-            <span class="stat-value">{{ formatNumber(numberReport.statistics.average) }}</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">最大值</span>
-            <span class="stat-value">{{ formatNumber(numberReport.statistics.max) }}</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">最小值</span>
-            <span class="stat-value">{{ formatNumber(numberReport.statistics.min) }}</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">總和</span>
-            <span class="stat-value">{{ formatNumber(numberReport.statistics.sum) }}</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">記錄數</span>
-            <span class="stat-value">{{ numberReport.statistics.count }}</span>
+      <h2 class="report-type-title">數值報表</h2>
+      <div class="report-tabs" role="tablist" aria-label="數值報表圖表">
+        <button
+          v-for="tab in numberChartTabs"
+          :key="tab.id"
+          type="button"
+          role="tab"
+          class="report-tab"
+          :class="{ 'report-tab--active': numberChartTab === tab.id }"
+          :aria-selected="numberChartTab === tab.id"
+          @click="numberChartTab = tab.id"
+        >
+          {{ tab.label }}
+        </button>
+      </div>
+      <div class="report-tab-panel">
+        <div
+          v-show="numberChartTab === 'summary'"
+          class="report-section"
+        >
+          <h3 class="report-panel-title">統計摘要</h3>
+          <div class="statistics-grid" v-if="numberReport.statistics">
+            <div class="stat-item">
+              <span class="stat-label">平均值</span>
+              <span class="stat-value">{{ formatNumber(numberReport.statistics.average) }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">最大值</span>
+              <span class="stat-value">{{ formatNumber(numberReport.statistics.max) }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">最小值</span>
+              <span class="stat-value">{{ formatNumber(numberReport.statistics.min) }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">總和</span>
+              <span class="stat-value">{{ formatNumber(numberReport.statistics.sum) }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">記錄數</span>
+              <span class="stat-value">{{ numberReport.statistics.count }}</span>
+            </div>
           </div>
         </div>
-      </div>
-      <div class="data-preview">
-        <h3>趨勢數據：</h3>
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>日期</th>
-              <th>數值</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="point in numberReport.trendData" :key="point.date">
-              <td>{{ formatDate(point.date) }}</td>
-              <td>{{ point.value || '-' }}</td>
-            </tr>
-          </tbody>
-        </table>
+        <div v-show="numberChartTab === 'line'" class="report-tab-chart-host">
+          <NumberTrendChart
+            :trend-data="numberReport.trendData"
+            :y-axis-name="selectedFieldUnit"
+          />
+        </div>
+        <div v-show="numberChartTab === 'calendar'" class="report-tab-chart-host">
+          <NumberCalendarHeatmap
+            :trend-data="numberReport.trendData"
+            :range-start="startDate"
+            :range-end="endDate"
+            :value-label="numberHeatmapValueLabel"
+          />
+        </div>
+        <div v-show="numberChartTab === 'table'" class="data-preview">
+          <h3 class="report-panel-title">趨勢數據</h3>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>日期</th>
+                <th>數值</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="point in numberReport.trendData" :key="point.date">
+                <td>{{ formatDate(point.date) }}</td>
+                <td>{{ point.value || '-' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
     <!-- ENUM 類型報表 - 分佈統計 -->
     <div v-else-if="selectedFieldType === 'ENUM' && enumDistribution" class="chart-wrapper">
-      <div class="report-section">
-        <h2>分佈統計</h2>
-        <div class="distribution-list">
-          <div 
-            v-for="(count, option) in enumDistribution.distribution" 
-            :key="option"
-            class="distribution-item"
-          >
-            <div class="distribution-label">{{ option }}</div>
-            <div class="distribution-bar">
-              <div 
-                class="distribution-fill" 
-                :style="{ width: `${enumDistribution.percentages[option] || 0}%` }"
-              >
+      <h2 class="report-type-title">選項報表</h2>
+      <div class="report-tabs" role="tablist" aria-label="選項報表圖表">
+        <button
+          v-for="tab in enumChartTabs"
+          :key="tab.id"
+          type="button"
+          role="tab"
+          class="report-tab"
+          :class="{ 'report-tab--active': enumChartTab === tab.id }"
+          :aria-selected="enumChartTab === tab.id"
+          @click="enumChartTab = tab.id"
+        >
+          {{ tab.label }}
+        </button>
+      </div>
+      <div class="report-tab-panel">
+        <div v-show="enumChartTab === 'distribution'" class="report-tab-chart-host">
+          <EnumDistributionChart
+            :distribution="enumDistribution.distribution"
+            :percentages="enumDistribution.percentages"
+            :option-order="selectedEnumOptionOrder"
+          />
+        </div>
+        <div v-show="enumChartTab === 'calendar'" class="report-tab-chart-host">
+          <EnumOptionCalendarHeatmap
+            :enum-trend="enumTrend"
+            :range-start="startDate"
+            :range-end="endDate"
+            :option-order="selectedEnumOptionOrder"
+          />
+        </div>
+        <div v-show="enumChartTab === 'list'" class="report-section">
+          <h3 class="report-panel-title">選項明細</h3>
+          <div class="distribution-list">
+            <div
+              v-for="row in enumDistributionRows"
+              :key="row.option"
+              class="distribution-item"
+            >
+              <div class="distribution-label">{{ row.option }}</div>
+              <div class="distribution-bar">
+                <div
+                  class="distribution-fill"
+                  :style="{
+                    width: `${roundPercent(row.percent)}%`,
+                    background: `linear-gradient(90deg, ${row.barColorDark}, ${row.barColor})`,
+                  }"
+                >
+                </div>
+              </div>
+              <div class="distribution-count">
+                <span>{{ row.count }} 次</span>
+                <span class="percentage-text">
+                  ({{ roundPercent(row.percent) }}%)
+                </span>
               </div>
             </div>
-            <div class="distribution-count">
-              <span>{{ count }} 次</span>
-              <span class="percentage-text">
-                ({{ enumDistribution.percentages[option] || 0 }}%)
-              </span>
-            </div>
           </div>
+          <div class="total-count">總記錄數：{{ enumDistribution.totalCount }}</div>
         </div>
-        <div class="total-count">總記錄數：{{ enumDistribution.totalCount }}</div>
       </div>
     </div>
 
     <!-- TEXT 類型報表 -->
     <div v-else-if="selectedFieldType === 'TEXT' && textAnalysis" class="chart-wrapper">
-      <div class="report-section">
-        <h2>文字分析</h2>
-        <div class="text-stats">
-          <div class="stat-item">
-            <span class="stat-label">總記錄數</span>
-            <span class="stat-value">{{ textAnalysis.totalCount }}</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">平均長度</span>
-            <span class="stat-value">{{ Math.round(textAnalysis.averageLength) }} 字</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">最長</span>
-            <span class="stat-value">{{ textAnalysis.maxLength }} 字</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">最短</span>
-            <span class="stat-value">{{ textAnalysis.minLength }} 字</span>
+      <h2 class="report-type-title">文字報表</h2>
+      <div class="report-tabs" role="tablist" aria-label="文字報表圖表">
+        <button
+          v-for="tab in textChartTabs"
+          :key="tab.id"
+          type="button"
+          role="tab"
+          class="report-tab"
+          :class="{ 'report-tab--active': textChartTab === tab.id }"
+          :aria-selected="textChartTab === tab.id"
+          @click="textChartTab = tab.id"
+        >
+          {{ tab.label }}
+        </button>
+      </div>
+      <div class="report-tab-panel">
+        <div v-show="textChartTab === 'summary'" class="report-section">
+          <h3 class="report-panel-title">摘要</h3>
+          <div class="text-stats">
+            <div class="stat-item">
+              <span class="stat-label">總記錄數</span>
+              <span class="stat-value">{{ textAnalysis.totalCount }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">平均長度</span>
+              <span class="stat-value">{{ Math.round(textAnalysis.averageLength) }} 字</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">最長</span>
+              <span class="stat-value">{{ textAnalysis.maxLength }} 字</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">最短</span>
+              <span class="stat-value">{{ textAnalysis.minLength }} 字</span>
+            </div>
           </div>
         </div>
-        <div class="keyword-section">
-          <h3>關鍵字頻率（前 10 名）</h3>
+        <div v-show="textChartTab === 'calendar'" class="report-tab-chart-host">
+          <TextCalendarHeatmap
+            :timeline-data="textAnalysis.timelineData || {}"
+            :range-start="startDate"
+            :range-end="endDate"
+          />
+        </div>
+        <div v-show="textChartTab === 'keywords'" class="report-tab-chart-host">
+          <KeywordBarChart :keyword-frequency="textAnalysis.keywordFrequency || {}" />
+        </div>
+        <div v-show="textChartTab === 'keywordList'" class="keyword-section">
+          <h3 class="report-panel-title">關鍵字頻率（前 10 名）</h3>
           <div class="keyword-list">
-            <div 
-              v-for="(count, keyword) in topKeywords" 
+            <div
+              v-for="(count, keyword) in topKeywords"
               :key="keyword"
               class="keyword-item"
             >
@@ -173,12 +288,60 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import '@/echarts/registerEcharts.js'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useReportStore } from '@/stores/reportStore'
 import { useSettingsStore } from '@/stores/settingsStore'
+import NumberTrendChart from '@/components/charts/NumberTrendChart.vue'
+import NumberCalendarHeatmap from '@/components/charts/NumberCalendarHeatmap.vue'
+import EnumDistributionChart from '@/components/charts/EnumDistributionChart.vue'
+import EnumOptionCalendarHeatmap from '@/components/charts/EnumOptionCalendarHeatmap.vue'
+import TextCalendarHeatmap from '@/components/charts/TextCalendarHeatmap.vue'
+import KeywordBarChart from '@/components/charts/KeywordBarChart.vue'
+import {
+  parseEnumOptionLabels,
+  orderNamesByFieldOptions,
+} from '@/utils/enumOptionOrder.js'
+import {
+  colorForEnumOption,
+  mixHexWithBlack,
+} from '@/utils/enumChartColors.js'
 
 const reportStore = useReportStore()
 const settingsStore = useSettingsStore()
+
+const numberChartTabs = [
+  { id: 'summary', label: '統計摘要' },
+  { id: 'line', label: '趨勢圖' },
+  { id: 'calendar', label: '日曆熱力圖' },
+  { id: 'table', label: '趨勢數據表' },
+]
+const numberChartTab = ref('summary')
+
+const enumChartTabs = [
+  { id: 'distribution', label: '分布圖' },
+  { id: 'calendar', label: '日曆熱力圖' },
+  { id: 'list', label: '選項計數表' },
+]
+const enumChartTab = ref('distribution')
+
+const textChartTabs = [
+  { id: 'summary', label: '摘要' },
+  { id: 'calendar', label: '日曆熱力圖' },
+  { id: 'keywords', label: '關鍵字長條' },
+  { id: 'keywordList', label: '關鍵字列表' },
+]
+const textChartTab = ref('summary')
+
+function scheduleChartResize() {
+  nextTick(() => {
+    window.dispatchEvent(new Event('resize'))
+  })
+}
+
+watch(numberChartTab, scheduleChartResize)
+watch(enumChartTab, scheduleChartResize)
+watch(textChartTab, scheduleChartResize)
 
 const selectedField = ref('')
 const startDate = ref('')
@@ -188,6 +351,7 @@ const isLoading = computed(() => reportStore.isLoading)
 const error = computed(() => reportStore.error)
 const numberReport = computed(() => reportStore.numberReport)
 const enumDistribution = computed(() => reportStore.enumDistribution)
+const enumTrend = computed(() => reportStore.enumTrend)
 const textAnalysis = computed(() => reportStore.textAnalysis)
 
 // 顯示所有啟用的欄位
@@ -204,6 +368,50 @@ const selectedFieldType = computed(() => {
     (f) => f.fieldName === selectedField.value
   )
   return field?.dataType || null
+})
+
+const selectedFieldUnit = computed(() => {
+  if (!selectedField.value) return ''
+  const field = settingsStore.fieldSettings.find(
+    (f) => f.fieldName === selectedField.value
+  )
+  return field?.unit?.trim() || ''
+})
+
+const numberHeatmapValueLabel = computed(() => {
+  const u = selectedFieldUnit.value
+  return u ? `數值（${u}）` : '數值'
+})
+
+/** 目前 ENUM 欄位在設定中的選項順序（與表單下拉一致） */
+const selectedEnumOptionOrder = computed(() => {
+  if (selectedFieldType.value !== 'ENUM' || !selectedField.value) return []
+  const field = settingsStore.fieldSettings.find(
+    (f) => f.fieldName === selectedField.value
+  )
+  if (!field || field.dataType !== 'ENUM') return []
+  return parseEnumOptionLabels(field.options)
+})
+
+/** 分佈列表列順序：依欄位設定，其餘鍵接在後 */
+const enumDistributionRows = computed(() => {
+  const ed = enumDistribution.value
+  if (!ed?.distribution) return []
+  const dist = ed.distribution
+  const pct = ed.percentages || {}
+  const keys = Object.keys(dist)
+  const order = selectedEnumOptionOrder.value
+  const ordered = orderNamesByFieldOptions(keys, order)
+  return ordered.map((option, i) => {
+    const barColor = colorForEnumOption(option, order, i)
+    return {
+      option,
+      count: dist[option],
+      percent: pct[option],
+      barColor,
+      barColorDark: mixHexWithBlack(barColor, 0.22),
+    }
+  })
 })
 
 // 檢查是否有數據
@@ -244,6 +452,9 @@ const formatNumber = (value) => {
   })
 }
 
+/** 百分比四捨五入至整數（顯示與長條寬度） */
+const roundPercent = (value) => Math.round(Number(value ?? 0))
+
 const getFieldTypeLabel = (dataType) => {
   const labels = {
     NUMBER: '數值',
@@ -266,8 +477,10 @@ const getFieldDisplayText = (field) => {
 }
 
 const onFieldChange = () => {
-  // 欄位改變時清除舊數據
   reportStore.clearAllData()
+  numberChartTab.value = 'summary'
+  enumChartTab.value = 'distribution'
+  textChartTab.value = 'summary'
 }
 
 const fetchData = async () => {
@@ -283,7 +496,7 @@ const fetchData = async () => {
     if (selectedFieldType.value === 'NUMBER') {
       await reportStore.fetchNumberReport(params)
     } else if (selectedFieldType.value === 'ENUM') {
-      await reportStore.fetchEnumDistribution(params)
+      await reportStore.fetchEnumDistributionAndTrend(params)
     } else if (selectedFieldType.value === 'TEXT') {
       await reportStore.fetchTextAnalysis(params)
     }
@@ -292,14 +505,100 @@ const fetchData = async () => {
   }
 }
 
-// 初始化日期範圍（預設為最近 30 天）
-const initDateRange = () => {
-  const end = new Date()
-  const start = new Date()
-  start.setDate(start.getDate() - 30)
+/** 本地日曆日轉 YYYY-MM-DD（避免 toISOString 時區偏移） */
+function toLocalYMD(d) {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
 
-  endDate.value = end.toISOString().split('T')[0]
-  startDate.value = start.toISOString().split('T')[0]
+/** 結束日為今天、含首尾共 inclusiveDays 天 */
+function applyInclusiveDayRange(inclusiveDays) {
+  const end = new Date()
+  end.setHours(0, 0, 0, 0)
+  const start = new Date(end)
+  start.setDate(start.getDate() - (inclusiveDays - 1))
+  endDate.value = toLocalYMD(end)
+  startDate.value = toLocalYMD(start)
+}
+
+/** 本週起始：週一 00:00（本地） */
+function startOfThisWeekMonday(ref) {
+  const d = new Date(ref)
+  d.setHours(0, 0, 0, 0)
+  const day = d.getDay()
+  const offset = day === 0 ? -6 : 1 - day
+  d.setDate(d.getDate() + offset)
+  return d
+}
+
+function applyFixedEndRange(start, end) {
+  const e = new Date(end)
+  e.setHours(0, 0, 0, 0)
+  const s = new Date(start)
+  s.setHours(0, 0, 0, 0)
+  endDate.value = toLocalYMD(e)
+  startDate.value = toLocalYMD(s)
+}
+
+const quickRangePresets = [
+  { id: 'cw', label: '本周', mode: 'thisWeek' },
+  { id: 'cm', label: '本月', mode: 'thisMonth' },
+  { id: 'cq', label: '本季', mode: 'thisQuarter' },
+  { id: 'cy', label: '本年', mode: 'thisYear' },
+  { id: '7', label: '近1週', mode: 'rolling', days: 7 },
+  { id: '14', label: '近2週', mode: 'rolling', days: 14 },
+  { id: '30', label: '近1個月', mode: 'rolling', days: 30 },
+  { id: '90', label: '近3個月', mode: 'rolling', days: 90 },
+]
+
+const selectedQuickRangeId = ref(null)
+
+function clearQuickRangeHighlight() {
+  selectedQuickRangeId.value = null
+}
+
+async function onQuickRange(preset) {
+  selectedQuickRangeId.value = preset.id
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  switch (preset.mode) {
+    case 'rolling':
+      applyInclusiveDayRange(preset.days ?? 7)
+      break
+    case 'thisWeek':
+      applyFixedEndRange(startOfThisWeekMonday(today), today)
+      break
+    case 'thisMonth':
+      applyFixedEndRange(
+        new Date(today.getFullYear(), today.getMonth(), 1),
+        today
+      )
+      break
+    case 'thisQuarter': {
+      const q0 = Math.floor(today.getMonth() / 3) * 3
+      applyFixedEndRange(new Date(today.getFullYear(), q0, 1), today)
+      break
+    }
+    case 'thisYear':
+      applyFixedEndRange(new Date(today.getFullYear(), 0, 1), today)
+      break
+    default:
+      applyInclusiveDayRange(7)
+  }
+
+  await nextTick()
+  if (canFetch.value) {
+    await fetchData()
+  }
+}
+
+// 初始化日期範圍（預設為最近 30 天，本地日；與「近1個月」一致）
+const initDateRange = () => {
+  applyInclusiveDayRange(30)
+  selectedQuickRangeId.value = '30'
 }
 
 onMounted(async () => {
@@ -385,6 +684,62 @@ h1 {
   cursor: not-allowed;
 }
 
+.quick-range-bar {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem 1rem;
+  padding-top: 1rem;
+  margin-top: 0.25rem;
+  border-top: 1px solid #eee;
+}
+
+.quick-range-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #555;
+  white-space: nowrap;
+}
+
+.quick-range-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.quick-range-tag {
+  padding: 0.35rem 0.75rem;
+  border: 1px solid #d0d0d0;
+  border-radius: 999px;
+  background: #fafafa;
+  color: #444;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s;
+}
+
+.quick-range-tag:hover:not(:disabled) {
+  background: #eef4fc;
+  border-color: #4a90e2;
+  color: #333;
+}
+
+.quick-range-tag--active {
+  background: #e8f0fe;
+  border-color: #4a90e2;
+  color: #1a4a8c;
+  font-weight: 600;
+}
+
+.quick-range-tag:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .error-message,
 .empty-message {
   text-align: center;
@@ -404,6 +759,71 @@ h1 {
   border-radius: 8px;
   padding: 2rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.report-type-title {
+  margin: 0 0 1rem;
+  font-size: 1.5rem;
+  color: #333;
+}
+
+.report-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.report-tab {
+  padding: 0.5rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #f5f5f5;
+  color: #555;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s;
+}
+
+.report-tab:hover {
+  background: #eee;
+  color: #333;
+}
+
+.report-tab--active {
+  background: #fff;
+  border-color: #4a90e2;
+  color: #333;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(74, 144, 226, 0.2);
+}
+
+.report-tab-panel {
+  min-height: 8rem;
+}
+
+.report-panel-title {
+  margin: 0 0 1rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.report-tab-chart-host {
+  min-width: 0;
+}
+
+.report-tab-panel .data-preview {
+  margin-top: 0;
+}
+
+.report-tab-panel > .report-section:last-child {
+  margin-bottom: 0;
 }
 
 .chart-placeholder {
@@ -518,6 +938,8 @@ h1 {
   font-weight: 500;
   color: #333;
   font-size: 0.9rem;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .distribution-bar {
@@ -533,7 +955,6 @@ h1 {
 .distribution-fill {
   height: 100%;
   min-width: 4%; /* 降低最小寬度，但確保可見 */
-  background: linear-gradient(90deg, #4a90e2, #357abd);
   transition: width 0.3s ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
@@ -580,15 +1001,15 @@ h1 {
 .total-count {
   margin-top: 1rem;
   padding: 1rem;
-  background-color: #e3f2fd;
+  background-color: #e0f2f1;
   border-radius: 8px;
   font-weight: 500;
-  color: #1976d2;
+  color: #00695c;
 }
 
 .percentage-text {
   font-weight: 600;
-  color: #4a90e2;
+  color: #0f766e;
 }
 
 .text-stats {
@@ -602,9 +1023,8 @@ h1 {
   margin-top: 2rem;
 }
 
-.keyword-section h3 {
-  margin-bottom: 1rem;
-  color: #333;
+.report-tab-panel .keyword-section {
+  margin-top: 0;
 }
 
 .keyword-list {

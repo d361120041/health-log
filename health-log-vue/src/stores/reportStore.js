@@ -2,6 +2,9 @@ import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import apiClient from '@/services/apiClient'
 
+/** 遞增世代：新查詢或 clear 時推進，過期的 async 回應不可寫入 state（避免卸載後 patch 錯誤） */
+let reportFetchGeneration = 0
+
 /**
  * 報表 Store
  * 管理報表數據查詢
@@ -103,10 +106,32 @@ export const useReportStore = defineStore('report', () => {
    * @returns {Promise<Object>}
    */
   const fetchNumberReport = async (params) => {
-    const data = await baseApiCall('/reports/number', params)
-    numberReport.value = data
-    trendData.value = data?.trendData || []
-    return data
+    const myGen = ++reportFetchGeneration
+    isLoading.value = true
+    error.value = null
+    try {
+      validateParams(params)
+      const queryParams = buildBaseQueryParams(params)
+      const response = await apiClient.get('/reports/number', {
+        params: queryParams,
+      })
+      if (myGen !== reportFetchGeneration) return null
+      const data = response.data
+      numberReport.value = data
+      trendData.value = data?.trendData || []
+      return data
+    } catch (err) {
+      if (myGen === reportFetchGeneration) {
+        error.value = err
+        console.error('Failed to fetch number report:', err)
+        throw err
+      }
+      return null
+    } finally {
+      if (myGen === reportFetchGeneration) {
+        isLoading.value = false
+      }
+    }
   }
 
   /**
@@ -186,6 +211,38 @@ export const useReportStore = defineStore('report', () => {
     return data
   }
 
+  /**
+   * 並行取得 ENUM 分佈與時間趨勢（單一 loading 狀態）
+   */
+  const fetchEnumDistributionAndTrend = async (params) => {
+    const myGen = ++reportFetchGeneration
+    isLoading.value = true
+    error.value = null
+    try {
+      validateParams(params)
+      const queryParams = buildBaseQueryParams(params)
+      const [distRes, trendRes] = await Promise.all([
+        apiClient.get('/reports/enum/distribution', { params: queryParams }),
+        apiClient.get('/reports/enum/trend', { params: queryParams }),
+      ])
+      if (myGen !== reportFetchGeneration) return null
+      enumDistribution.value = distRes.data
+      enumTrend.value = trendRes.data
+      return { distribution: distRes.data, trend: trendRes.data }
+    } catch (err) {
+      if (myGen === reportFetchGeneration) {
+        error.value = err
+        console.error('Failed to fetch enum reports:', err)
+        throw err
+      }
+      return null
+    } finally {
+      if (myGen === reportFetchGeneration) {
+        isLoading.value = false
+      }
+    }
+  }
+
   // ==================== TEXT 類型報表 ====================
 
   /**
@@ -197,9 +254,31 @@ export const useReportStore = defineStore('report', () => {
    * @returns {Promise<Object>}
    */
   const fetchTextAnalysis = async (params) => {
-    const data = await baseApiCall('/reports/text/analysis', params)
-    textAnalysis.value = data
-    return data
+    const myGen = ++reportFetchGeneration
+    isLoading.value = true
+    error.value = null
+    try {
+      validateParams(params)
+      const queryParams = buildBaseQueryParams(params)
+      const response = await apiClient.get('/reports/text/analysis', {
+        params: queryParams,
+      })
+      if (myGen !== reportFetchGeneration) return null
+      const data = response.data
+      textAnalysis.value = data
+      return data
+    } catch (err) {
+      if (myGen === reportFetchGeneration) {
+        error.value = err
+        console.error('Failed to fetch text analysis:', err)
+        throw err
+      }
+      return null
+    } finally {
+      if (myGen === reportFetchGeneration) {
+        isLoading.value = false
+      }
+    }
   }
 
   // ==================== 工具方法 ====================
@@ -215,6 +294,9 @@ export const useReportStore = defineStore('report', () => {
    * 清除所有報表數據
    */
   const clearAllData = () => {
+    reportFetchGeneration += 1
+    isLoading.value = false
+    error.value = null
     trendData.value = []
     numberReport.value = null
     enumDistribution.value = null
@@ -233,6 +315,7 @@ export const useReportStore = defineStore('report', () => {
    * 重置 Store 狀態
    */
   const reset = () => {
+    reportFetchGeneration += 1
     trendData.value = []
     numberReport.value = null
     enumDistribution.value = null
@@ -257,6 +340,7 @@ export const useReportStore = defineStore('report', () => {
     // Actions - ENUM
     fetchEnumDistribution,
     fetchEnumTrend,
+    fetchEnumDistributionAndTrend,
     // Actions - TEXT
     fetchTextAnalysis,
     // Actions - 工具方法

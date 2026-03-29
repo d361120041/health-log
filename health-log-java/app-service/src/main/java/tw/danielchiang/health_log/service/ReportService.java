@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -243,14 +244,8 @@ public class ReportService {
             }
         }
 
-        // 計算百分比
-        Map<String, Double> percentages = new HashMap<>();
-        if (totalCount > 0) {
-            for (Map.Entry<String, Long> entry : distribution.entrySet()) {
-                double percentage = (entry.getValue().doubleValue() / totalCount) * 100.0;
-                percentages.put(entry.getKey(), Math.round(percentage * 100.0) / 100.0);
-            }
-        }
+        // 整數百分比（最大餘數法，加總必為 100）
+        Map<String, Double> percentages = integerPercentagesLargestRemainder(distribution, totalCount);
 
         return new EnumDistributionDTO(distribution, totalCount, percentages);
     }
@@ -353,6 +348,39 @@ public class ReportService {
                 : lengths.stream().mapToInt(Integer::intValue).min().orElse(0);
 
         return new TextAnalysisDTO(keywordFrequency, totalCount, averageLength, maxLength, minLength, timelineData);
+    }
+
+    /**
+     * 最大餘數法（Largest Remainder Method）：將各選項真實占比化為整數百分比，加總必為 100。
+     */
+    private Map<String, Double> integerPercentagesLargestRemainder(Map<String, Long> distribution, long totalCount) {
+        Map<String, Double> percentages = new HashMap<>();
+        if (totalCount <= 0 || distribution.isEmpty()) {
+            return percentages;
+        }
+
+        record FloorEntry(String key, int floor, double remainder) {}
+
+        List<FloorEntry> work = new ArrayList<>();
+        int sumFloor = 0;
+        for (Map.Entry<String, Long> entry : distribution.entrySet()) {
+            double quota = (entry.getValue().doubleValue() / totalCount) * 100.0;
+            int floor = (int) Math.floor(quota);
+            double remainder = quota - floor;
+            work.add(new FloorEntry(entry.getKey(), floor, remainder));
+            sumFloor += floor;
+        }
+
+        int deficit = 100 - sumFloor;
+        work.sort(Comparator.comparingDouble(FloorEntry::remainder).reversed());
+
+        for (int i = 0; i < work.size(); i++) {
+            FloorEntry fe = work.get(i);
+            int pct = fe.floor() + (i < deficit ? 1 : 0);
+            percentages.put(fe.key(), (double) pct);
+        }
+
+        return percentages;
     }
 }
 
