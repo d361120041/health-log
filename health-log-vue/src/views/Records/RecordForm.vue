@@ -2,7 +2,7 @@
   <div class="record-form-container">
     <div class="header">
       <h1>{{ isEditMode ? '編輯記錄' : '新增記錄' }}</h1>
-      <button type="button" class="btn btn-secondary" @click="$router.back()">返回</button>
+      <button type="button" class="btn btn-secondary" @click="handleBack">返回</button>
     </div>
 
     <div v-if="isLoadingRecord" class="loading-message">載入記錄中...</div>
@@ -49,10 +49,12 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
 import { useRecordsStore } from '@/stores/recordsStore'
 import DynamicRecordForm from '@/components/dynamic/DynamicRecordForm.vue'
+
+const LEAVE_CONFIRM_MESSAGE = '內容尚未儲存，確定要離開嗎？'
 
 const route = useRoute()
 const router = useRouter()
@@ -64,8 +66,20 @@ const initialFieldValues = ref({})
 const isSaving = ref(false)
 const isLoadingRecord = ref(false)
 const recordError = ref('')
+const baselineSelectedDate = ref('')
+const allowLeaveWithoutPrompt = ref(false)
 
 const isEditMode = computed(() => !!route.params.date)
+
+const isDirty = computed(() => {
+  if (allowLeaveWithoutPrompt.value) return false
+  if (isLoadingRecord.value || recordError.value) return false
+  if (!formRef.value) return false
+  const dateDirty =
+    !isEditMode.value && selectedDate.value !== baselineSelectedDate.value
+  const fieldsDirty = formRef.value.hasUnsavedFieldChanges()
+  return dateDirty || fieldsDirty
+})
 
 // 初始化日期
 const initDate = () => {
@@ -130,7 +144,7 @@ const handleSubmit = async (fieldValues) => {
       fieldValues,
     })
 
-    // 儲存成功，返回列表
+    allowLeaveWithoutPrompt.value = true
     router.back()
   } catch (err) {
     console.error('Save record error:', err)
@@ -143,13 +157,44 @@ const handleSubmit = async (fieldValues) => {
   }
 }
 
+const tryLeave = () => {
+  if (!isDirty.value) {
+    router.back()
+    return
+  }
+  if (confirm(LEAVE_CONFIRM_MESSAGE)) {
+    router.back()
+  }
+}
+
+const handleBack = () => {
+  tryLeave()
+}
+
 const handleCancel = () => {
-  router.back()
+  tryLeave()
+}
+
+onBeforeRouteLeave(() => {
+  if (!isDirty.value) return true
+  return confirm(LEAVE_CONFIRM_MESSAGE)
+})
+
+const onWindowBeforeUnload = (e) => {
+  if (!isDirty.value) return
+  e.preventDefault()
+  e.returnValue = ''
 }
 
 onMounted(async () => {
+  window.addEventListener('beforeunload', onWindowBeforeUnload)
   initDate()
   await loadRecord()
+  baselineSelectedDate.value = selectedDate.value
+})
+
+onUnmounted(() => {
+  window.removeEventListener('beforeunload', onWindowBeforeUnload)
 })
 </script>
 

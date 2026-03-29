@@ -93,10 +93,39 @@ const emit = defineEmits(['update:modelValue', 'submit', 'cancel'])
 
 const settingsStore = useSettingsStore()
 
+const stableStringify = (obj) => {
+  if (obj == null || typeof obj !== 'object') {
+    return JSON.stringify(obj)
+  }
+  const keys = Object.keys(obj).sort()
+  const sorted = {}
+  for (const k of keys) {
+    sorted[k] = obj[k]
+  }
+  return JSON.stringify(sorted)
+}
+
+const buildSnapshotFromProps = () => {
+  if (props.initialValues && Object.keys(props.initialValues).length > 0) {
+    return { ...props.initialValues }
+  }
+  if (props.modelValue && Object.keys(props.modelValue).length > 0) {
+    return { ...props.modelValue }
+  }
+  return {}
+}
+
 // 表單數據
 const fieldValues = ref({})
+const baselineFieldValues = ref({})
 const fieldErrors = ref({})
 const isSubmitting = ref(false)
+
+const applyInitialSnapshotFromProps = () => {
+  const snap = buildSnapshotFromProps()
+  fieldValues.value = { ...snap }
+  baselineFieldValues.value = JSON.parse(JSON.stringify(snap))
+}
 
 // 計算屬性
 const isLoading = computed(() => settingsStore.isLoading)
@@ -193,13 +222,16 @@ onMounted(async () => {
     await settingsStore.fetchFieldSettings()
   }
 
-  // 初始化表單數據
-  if (props.initialValues && Object.keys(props.initialValues).length > 0) {
-    fieldValues.value = { ...props.initialValues }
-  } else if (props.modelValue && Object.keys(props.modelValue).length > 0) {
-    fieldValues.value = { ...props.modelValue }
-  }
+  applyInitialSnapshotFromProps()
 })
+
+watch(
+  () => props.initialValues,
+  () => {
+    applyInitialSnapshotFromProps()
+  },
+  { deep: true }
+)
 
 // 監聽 modelValue 變化
 watch(
@@ -207,21 +239,28 @@ watch(
   (newValue) => {
     if (newValue && Object.keys(newValue).length > 0) {
       fieldValues.value = { ...newValue }
+      baselineFieldValues.value = JSON.parse(JSON.stringify(newValue))
     }
   },
   { deep: true }
 )
+
+const hasUnsavedFieldChanges = () => {
+  return stableStringify(fieldValues.value) !== stableStringify(baselineFieldValues.value)
+}
 
 // 暴露方法給父元件
 defineExpose({
   validate: validateForm,
   reset: () => {
     fieldValues.value = {}
+    baselineFieldValues.value = {}
     fieldErrors.value = {}
   },
   setSubmitting: (value) => {
     isSubmitting.value = value
   },
+  hasUnsavedFieldChanges,
 })
 </script>
 
