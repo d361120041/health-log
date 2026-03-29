@@ -26,7 +26,7 @@
             'selected': day.isSelected
           }
         ]"
-        @click="handleDayClick(day, $event)"
+        @click="handleDayClick(day)"
       >
         <span class="day-number">{{ day.day }}</span>
       </div>
@@ -134,15 +134,8 @@ const isSameDay = (date1, date2) => {
 }
 
 // 處理日期點擊
-const handleDayClick = (day, event) => {
-  // 獲取點擊元素的位置
-  const rect = event.currentTarget.getBoundingClientRect()
-  emit('date-click', day.date, {
-    top: rect.top,
-    left: rect.left,
-    width: rect.width,
-    height: rect.height
-  })
+const handleDayClick = (day) => {
+  emit('date-click', day.date)
 }
 
 // 切換到上個月

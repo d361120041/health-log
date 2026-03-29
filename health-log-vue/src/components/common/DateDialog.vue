@@ -1,54 +1,56 @@
 <template>
   <Teleport to="body">
-    <div
-      v-if="show && date"
-      class="date-dialog"
-      :style="dialogStyle"
-      @click.stop
-    >
-      <div class="dialog-header">
-        <h3>{{ formatDisplayDate(date) }}</h3>
-        <button @click="handleClose" class="close-btn">×</button>
-      </div>
+    <div v-if="show && date" class="date-dialog-overlay">
+      <div
+        class="date-dialog-backdrop"
+        aria-hidden="true"
+        @click="handleClose"
+      />
+      <div class="date-dialog" role="dialog" aria-modal="true" @click.stop>
+        <div class="dialog-header">
+          <h3>{{ formatDisplayDate(date) }}</h3>
+          <button @click="handleClose" class="close-btn">×</button>
+        </div>
 
-      <div class="dialog-content">
-        <div v-if="hasRecord && record" class="record-details">
-          <div class="record-content">
-            <div
-              v-for="(value, fieldName) in record.fieldValues"
-              :key="fieldName"
-              class="record-field"
-            >
-              <span class="field-name">{{ fieldName }}:</span>
-              <span class="field-value">{{ formatFieldValue(fieldName, value) }}</span>
+        <div class="dialog-content">
+          <div v-if="hasRecord && record" class="record-details">
+            <div class="record-content">
+              <div
+                v-for="(value, fieldName) in record.fieldValues"
+                :key="fieldName"
+                class="record-field"
+              >
+                <span class="field-name">{{ fieldName }}:</span>
+                <span class="field-value">{{ formatFieldValue(fieldName, value) }}</span>
+              </div>
             </div>
           </div>
-        </div>
-        <div v-else class="message">
-          <p>此日期尚未記錄</p>
-        </div>
+          <div v-else class="message">
+            <p>此日期尚未記錄</p>
+          </div>
 
-        <div class="actions">
-          <button
-            v-if="hasRecord"
-            @click="handleEdit"
-            class="btn btn-primary"
-          >
-            編輯記錄
-          </button>
-          <button
-            v-else
-            @click="handleNew"
-            class="btn btn-primary"
-          >
-            新增記錄
-          </button>
-          <button
-            @click="handleClose"
-            class="btn btn-secondary"
-          >
-            取消
-          </button>
+          <div class="actions">
+            <button
+              v-if="hasRecord"
+              @click="handleEdit"
+              class="btn btn-primary"
+            >
+              編輯記錄
+            </button>
+            <button
+              v-else
+              @click="handleNew"
+              class="btn btn-primary"
+            >
+              新增記錄
+            </button>
+            <button
+              @click="handleClose"
+              class="btn btn-secondary"
+            >
+              取消
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -56,7 +58,6 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSettingsStore } from '@/stores/settingsStore'
 
@@ -76,10 +77,6 @@ const props = defineProps({
   show: {
     type: Boolean,
     default: false
-  },
-  position: {
-    type: Object,
-    default: null
   }
 })
 
@@ -134,61 +131,41 @@ const handleEdit = () => {
 const handleClose = () => {
   emit('close')
 }
-
-// 計算對話框位置
-const dialogStyle = computed(() => {
-  if (!props.position) {
-    return {
-      top: '100px',
-      left: '100px'
-    }
-  }
-  
-  const dialogWidth = 320
-  const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1200
-  
-  // 對話框頂端對齊日期頂端
-  const top = props.position.top
-  
-  // 優先顯示在右邊
-  let left = props.position.left + props.position.width + 10
-  
-  // 檢查右邊是否有足夠空間
-  if (left + dialogWidth > viewportWidth - 10) {
-    // 右邊空間不足，顯示在左邊
-    left = props.position.left - dialogWidth - 10
-    
-    // 如果左邊也不夠，則貼著日期左邊顯示
-    if (left < 10) {
-      left = props.position.left + props.position.width + 10
-      // 如果右邊也不夠，則調整到視窗內
-      if (left + dialogWidth > viewportWidth - 10) {
-        left = viewportWidth - dialogWidth - 10
-      }
-    }
-  }
-  
-  return {
-    top: `${top}px`,
-    left: `${left}px`
-  }
-})
 </script>
 
 <style scoped>
-.date-dialog {
+.date-dialog-overlay {
   position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right))
+    max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+  box-sizing: border-box;
+}
+
+.date-dialog-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.date-dialog {
+  position: relative;
+  z-index: 1;
   background: white;
   border-radius: 8px;
   width: 320px;
   max-width: calc(100vw - 20px);
+  max-height: min(90vh, 100dvh - 2rem);
+  overflow-y: auto;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
   min-width: 200px;
   border: 1px solid #e0e0e0;
   margin: 0;
   padding: 0;
-  transform: none;
 }
 
 .dialog-header {

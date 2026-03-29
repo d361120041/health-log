@@ -48,7 +48,6 @@
       :date="selectedDate"
       :has-record="hasRecord"
       :record="selectedRecord"
-      :position="dialogPosition"
       :show="showDialog"
       @close="closeDialog"
     />
@@ -72,7 +71,6 @@ const currentMonth = ref(new Date())
 const showDialog = ref(false)
 const selectedDate = ref(null)
 const selectedRecord = ref(null)
-const dialogPosition = ref(null)
 
 // 月份記錄列表（用於標記月曆）
 const monthRecords = ref([])
@@ -129,10 +127,9 @@ const formatDate = (date) => {
 }
 
 // 處理日期點擊
-const handleDateClick = async (date, position) => {
+const handleDateClick = async (date) => {
   selectedDate.value = date
-  dialogPosition.value = position
-  
+
   // 確保日期格式一致（轉換為字符串格式 YYYY-MM-DD）
   const dateStr = typeof date === 'string' ? date : formatDate(date)
   
@@ -231,7 +228,6 @@ const closeDialog = () => {
   showDialog.value = false
   selectedDate.value = null
   selectedRecord.value = null
-  dialogPosition.value = null
 }
 
 onMounted(async () => {
