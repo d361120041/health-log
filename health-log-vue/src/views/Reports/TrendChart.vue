@@ -152,6 +152,66 @@
             </tbody>
           </table>
         </div>
+        <div v-show="numberChartTab === 'weekStats'" class="data-preview">
+          <h3 class="report-panel-title">週次統計</h3>
+          <div class="period-table-scroll">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>區間（週一～週日）</th>
+                  <th>筆數</th>
+                  <th>總和</th>
+                  <th>平均</th>
+                  <th>最小</th>
+                  <th>最大</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="row in numberWeeklyRows" :key="row.sortKey">
+                  <td>{{ row.periodLabel }}</td>
+                  <td>{{ row.count }}</td>
+                  <td>{{ formatNumber(row.sum) }}</td>
+                  <td>{{ formatNumber(row.avg) }}</td>
+                  <td>{{ formatNumber(row.min) }}</td>
+                  <td>{{ formatNumber(row.max) }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <p v-if="!numberWeeklyRows.length" class="period-empty">
+              此區間無有效數值紀錄
+            </p>
+          </div>
+        </div>
+        <div v-show="numberChartTab === 'monthStats'" class="data-preview">
+          <h3 class="report-panel-title">月次統計</h3>
+          <div class="period-table-scroll">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>月份</th>
+                  <th>筆數</th>
+                  <th>總和</th>
+                  <th>平均</th>
+                  <th>最小</th>
+                  <th>最大</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="row in numberMonthlyRows" :key="row.sortKey">
+                  <td>{{ row.periodLabel }}</td>
+                  <td>{{ row.count }}</td>
+                  <td>{{ formatNumber(row.sum) }}</td>
+                  <td>{{ formatNumber(row.avg) }}</td>
+                  <td>{{ formatNumber(row.min) }}</td>
+                  <td>{{ formatNumber(row.max) }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <p v-if="!numberMonthlyRows.length" class="period-empty">
+              此區間無有效數值紀錄
+            </p>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -216,6 +276,68 @@
             </div>
           </div>
           <div class="total-count">總記錄數：{{ enumDistribution.totalCount }}</div>
+        </div>
+        <div v-show="enumChartTab === 'weekStats'" class="data-preview">
+          <h3 class="report-panel-title">週次統計</h3>
+          <div class="period-table-scroll">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th class="period-sticky-col">區間（週一～週日）</th>
+                  <th v-for="col in enumTrendColumns" :key="col">{{ col }}</th>
+                  <th>總計</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="row in enumWeeklyRows" :key="row.sortKey">
+                  <td class="period-sticky-col">{{ row.periodLabel }}</td>
+                  <td v-for="col in enumTrendColumns" :key="col">
+                    {{ row.counts[col] ?? 0 }}
+                  </td>
+                  <td>{{ row.total }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <p v-if="!enumWeeklyRows.length" class="period-empty">
+              此區間無選項紀錄
+            </p>
+          </div>
+          <EnumPeriodStackedChart
+            title="週次選項次數（堆疊）"
+            :rows="enumWeeklyRows"
+            :option-order="selectedEnumOptionOrder"
+          />
+        </div>
+        <div v-show="enumChartTab === 'monthStats'" class="data-preview">
+          <h3 class="report-panel-title">月次統計</h3>
+          <div class="period-table-scroll">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th class="period-sticky-col">月份</th>
+                  <th v-for="col in enumTrendColumns" :key="col">{{ col }}</th>
+                  <th>總計</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="row in enumMonthlyRows" :key="row.sortKey">
+                  <td class="period-sticky-col">{{ row.periodLabel }}</td>
+                  <td v-for="col in enumTrendColumns" :key="col">
+                    {{ row.counts[col] ?? 0 }}
+                  </td>
+                  <td>{{ row.total }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <p v-if="!enumMonthlyRows.length" class="period-empty">
+              此區間無選項紀錄
+            </p>
+          </div>
+          <EnumPeriodStackedChart
+            title="月次選項次數（堆疊）"
+            :rows="enumMonthlyRows"
+            :option-order="selectedEnumOptionOrder"
+          />
         </div>
       </div>
     </div>
@@ -282,6 +404,66 @@
             </div>
           </div>
         </div>
+        <div v-show="textChartTab === 'weekStats'" class="data-preview">
+          <h3 class="report-panel-title">週次統計</h3>
+          <div class="period-table-scroll">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>區間（週一～週日）</th>
+                  <th>筆數</th>
+                  <th>總字數</th>
+                  <th>平均長度（字）</th>
+                  <th>最短（字）</th>
+                  <th>最長（字）</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="row in textWeeklyRows" :key="row.sortKey">
+                  <td>{{ row.periodLabel }}</td>
+                  <td>{{ row.count }}</td>
+                  <td>{{ row.totalChars }}</td>
+                  <td>{{ Math.round(row.avgLength) }}</td>
+                  <td>{{ row.minLength }}</td>
+                  <td>{{ row.maxLength }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <p v-if="!textWeeklyRows.length" class="period-empty">
+              此區間無文字紀錄
+            </p>
+          </div>
+        </div>
+        <div v-show="textChartTab === 'monthStats'" class="data-preview">
+          <h3 class="report-panel-title">月次統計</h3>
+          <div class="period-table-scroll">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>月份</th>
+                  <th>筆數</th>
+                  <th>總字數</th>
+                  <th>平均長度（字）</th>
+                  <th>最短（字）</th>
+                  <th>最長（字）</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="row in textMonthlyRows" :key="row.sortKey">
+                  <td>{{ row.periodLabel }}</td>
+                  <td>{{ row.count }}</td>
+                  <td>{{ row.totalChars }}</td>
+                  <td>{{ Math.round(row.avgLength) }}</td>
+                  <td>{{ row.minLength }}</td>
+                  <td>{{ row.maxLength }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <p v-if="!textMonthlyRows.length" class="period-empty">
+              此區間無文字紀錄
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -298,10 +480,17 @@ import EnumDistributionChart from '@/components/charts/EnumDistributionChart.vue
 import EnumOptionCalendarHeatmap from '@/components/charts/EnumOptionCalendarHeatmap.vue'
 import TextCalendarHeatmap from '@/components/charts/TextCalendarHeatmap.vue'
 import KeywordBarChart from '@/components/charts/KeywordBarChart.vue'
+import EnumPeriodStackedChart from '@/components/charts/EnumPeriodStackedChart.vue'
 import {
   parseEnumOptionLabels,
   orderNamesByFieldOptions,
 } from '@/utils/enumOptionOrder.js'
+import {
+  aggregateNumberTrendByPeriod,
+  aggregateEnumTrendByPeriod,
+  aggregateTextTimelineByPeriod,
+  getEnumColumnOrder,
+} from '@/utils/reportPeriodAggregate.js'
 import {
   colorForEnumOption,
   mixHexWithBlack,
@@ -315,13 +504,17 @@ const numberChartTabs = [
   { id: 'line', label: '趨勢圖' },
   { id: 'calendar', label: '日曆熱力圖' },
   { id: 'table', label: '趨勢數據表' },
+  { id: 'weekStats', label: '週次統計' },
+  { id: 'monthStats', label: '月次統計' },
 ]
 const numberChartTab = ref('summary')
 
 const enumChartTabs = [
   { id: 'distribution', label: '分布圖' },
   { id: 'calendar', label: '日曆熱力圖' },
-  { id: 'list', label: '選項計數表' },
+  { id: 'list', label: '選項計數' },
+  { id: 'weekStats', label: '週次統計' },
+  { id: 'monthStats', label: '月次統計' },
 ]
 const enumChartTab = ref('distribution')
 
@@ -330,6 +523,8 @@ const textChartTabs = [
   { id: 'calendar', label: '日曆熱力圖' },
   { id: 'keywords', label: '關鍵字長條' },
   { id: 'keywordList', label: '關鍵字列表' },
+  { id: 'weekStats', label: '週次統計' },
+  { id: 'monthStats', label: '月次統計' },
 ]
 const textChartTab = ref('summary')
 
@@ -413,6 +608,46 @@ const enumDistributionRows = computed(() => {
     }
   })
 })
+
+/** ENUM 週／月表橫向欄位順序（與日曆熱力圖一致） */
+const enumTrendColumns = computed(() => {
+  const t = enumTrend.value
+  if (!t?.trendData) return []
+  return getEnumColumnOrder(
+    t.trendData,
+    t.options,
+    selectedEnumOptionOrder.value
+  )
+})
+
+const numberWeeklyRows = computed(() =>
+  aggregateNumberTrendByPeriod(numberReport.value?.trendData, 'week')
+)
+const numberMonthlyRows = computed(() =>
+  aggregateNumberTrendByPeriod(numberReport.value?.trendData, 'month')
+)
+
+const enumWeeklyRows = computed(() =>
+  aggregateEnumTrendByPeriod(
+    enumTrend.value?.trendData,
+    enumTrendColumns.value,
+    'week'
+  )
+)
+const enumMonthlyRows = computed(() =>
+  aggregateEnumTrendByPeriod(
+    enumTrend.value?.trendData,
+    enumTrendColumns.value,
+    'month'
+  )
+)
+
+const textWeeklyRows = computed(() =>
+  aggregateTextTimelineByPeriod(textAnalysis.value?.timelineData, 'week')
+)
+const textMonthlyRows = computed(() =>
+  aggregateTextTimelineByPeriod(textAnalysis.value?.timelineData, 'month')
+)
 
 // 檢查是否有數據
 const hasData = computed(() => {
@@ -550,7 +785,6 @@ const quickRangePresets = [
   { id: 'lw', label: '上週', mode: 'lastWeek' },
   { id: 'lm', label: '上個月', mode: 'lastMonth' },
   { id: 'lq', label: '上一季', mode: 'lastQuarter' },
-  { id: 'ly', label: '去年', mode: 'lastYear' },
   { id: '7', label: '近1週', mode: 'rolling', days: 7 },
   { id: '14', label: '近2週', mode: 'rolling', days: 14 },
   { id: '30', label: '近1個月', mode: 'rolling', days: 30 },
@@ -616,11 +850,6 @@ async function onQuickRange(preset) {
       const start = new Date(py, sm, 1)
       const end = new Date(py, sm + 3, 0)
       applyFixedEndRange(start, end)
-      break
-    }
-    case 'lastYear': {
-      const y = today.getFullYear() - 1
-      applyFixedEndRange(new Date(y, 0, 1), new Date(y, 11, 31))
       break
     }
     default:
@@ -895,6 +1124,34 @@ h1 {
   background-color: #f5f5f5;
   font-weight: 500;
   color: #333;
+}
+
+.period-table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+
+.period-table-scroll .data-table {
+  min-width: max-content;
+}
+
+.period-sticky-col {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background-color: #f5f5f5;
+  box-shadow: 4px 0 8px -4px rgba(0, 0, 0, 0.12);
+}
+
+.data-table tbody .period-sticky-col {
+  background-color: #fff;
+}
+
+.period-empty {
+  margin: 0.75rem 0 0;
+  color: #666;
+  font-size: 0.9375rem;
 }
 
 .field-type-badge {
