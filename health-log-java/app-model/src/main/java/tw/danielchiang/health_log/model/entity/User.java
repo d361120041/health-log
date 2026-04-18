@@ -28,7 +28,6 @@ import lombok.NoArgsConstructor;
  */
 @Entity
 @Table(name = "users", indexes = {
-    @Index(name = "idx_users_email", columnList = "email", unique = true),
     @Index(name = "idx_users_oauth2", columnList = "oauth2_provider,oauth2_id"),
     @Index(name = "idx_users_email_verification_token", columnList = "email_verification_token")
 })

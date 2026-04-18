@@ -1,17 +1,15 @@
-version: '3.8'
-
 services:
   # PostgreSQL 資料庫服務
   postgres:
     container_name: health-log-postgres
     image: postgres:18.1-alpine
-    restart: unless-stopped
+    restart: no
     environment:
-      POSTGRES_DB: health-log
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-health-log}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     ports:
-      - 5432:5432
+      - ${POSTGRES_PORT:-5432}:5432
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -21,11 +19,11 @@ services:
   redis:
     container_name: health-log-redis
     image: redis:7.0.15-alpine
-    restart: unless-stopped
+    restart: no
     environment:
       TZ: Asia/Taipei
     ports:
-      - 6379:6379
+      - ${REDIS_PORT:-6379}:6379
     networks:
       - health-log-network
 
@@ -35,18 +33,26 @@ services:
     build:
       context: ./health-log-java
       dockerfile: Dockerfile
-    restart: unless-stopped
+    restart: no
     depends_on:
       - postgres
       - redis
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/health-log
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
-      SPRING_REDIS_HOST: redis
-      SPRING_REDIS_PORT: 6379
+      POSTGRES_HOST: ${POSTGRES_HOST:-postgres}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_DB: ${POSTGRES_DB:-health-log}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      HEALTH_LOG_JAVA_PORT: ${HEALTH_LOG_JAVA_PORT:-8080}
+      HEALTH_LOG_VUE_PROTOCOL: ${HEALTH_LOG_VUE_PROTOCOL:-http}
+      HEALTH_LOG_VUE_HOST: ${HEALTH_LOG_VUE_HOST:-health-log-vue}
+      HEALTH_LOG_VUE_PORT: ${HEALTH_LOG_VUE_PORT:-80}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-local,dev}
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-this-in-production-minimum-256-bits}
     ports:
-      - 8080:8080
+      - ${HEALTH_LOG_JAVA_PORT:-8080}:8080
     networks:
       - health-log-network
 
@@ -56,11 +62,11 @@ services:
     build:
       context: ./health-log-vue
       dockerfile: Dockerfile
-    restart: unless-stopped
+    restart: no
     depends_on:
       - health-log-java
     ports:
-      - 5173:5173
+      - ${HEALTH_LOG_VUE_PORT:-80}:80
     networks:
       - health-log-network
 

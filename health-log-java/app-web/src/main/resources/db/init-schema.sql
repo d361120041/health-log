@@ -16,14 +16,20 @@ CREATE TABLE IF NOT EXISTS roles (
 CREATE TABLE IF NOT EXISTS users (
     user_id BIGSERIAL PRIMARY KEY,
     email VARCHAR(255) NOT NULL UNIQUE,
-    password_hash VARCHAR(255) NOT NULL,
+    password_hash VARCHAR(255),
     role_id INT NOT NULL REFERENCES roles(role_id),
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-    is_active BOOLEAN NOT NULL DEFAULT TRUE
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    oauth2_provider VARCHAR(50),
+    oauth2_id VARCHAR(255),
+    email_verification_token VARCHAR(255),
+    email_verified_at TIMESTAMP WITH TIME ZONE
 );
 
 -- 建立 users 表的索引
-CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_email_verification_token ON users(email_verification_token);
+CREATE INDEX IF NOT EXISTS idx_users_oauth2 ON users(oauth2_provider, oauth2_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_oauth2_unique ON users(oauth2_provider, oauth2_id) WHERE oauth2_provider IS NOT NULL AND oauth2_id IS NOT NULL;
 
 -- ============================================
 -- 2. 記錄配置管理 (EAV Attribute)
