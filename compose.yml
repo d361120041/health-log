@@ -5,6 +5,7 @@ services:
     image: postgres:18.1-alpine
     restart: no
     environment:
+      TZ: Asia/Taipei
       POSTGRES_DB: ${POSTGRES_DB:-health-log}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
@@ -12,6 +13,8 @@ services:
       - ${POSTGRES_PORT:-5432}:5432
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./health-log-java/app-web/src/main/resources/db/init-replica.sql:/docker-entrypoint-initdb.d/init-replica.sql
+    command: ["postgres", "-c", "wal_level=replica"]
     networks:
       - health-log-network
 
@@ -38,6 +41,7 @@ services:
       - postgres
       - redis
     environment:
+      TZ: Asia/Taipei
       POSTGRES_HOST: ${POSTGRES_HOST:-postgres}
       POSTGRES_PORT: ${POSTGRES_PORT:-5432}
       POSTGRES_DB: ${POSTGRES_DB:-health-log}
@@ -65,6 +69,8 @@ services:
     restart: no
     depends_on:
       - health-log-java
+    environment:
+      TZ: Asia/Taipei
     ports:
       - ${HEALTH_LOG_VUE_PORT:-80}:80
     networks:
